@@ -8,6 +8,19 @@ import { storagePut } from "../storage";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 
 const dataUrlSchema = z.string().regex(/^data:(image\/(jpeg|jpg|png|webp)|video\/(mp4|webm));base64,/, "Format de média non pris en charge").max(3_000_000);
+const verificationReviewSchema = z.object({
+  verificationId: z.number().int().positive(),
+  decision: z.enum(["approved", "rejected"]),
+  note: z.string().trim().max(1000).default(""),
+  confirmedConsistent: z.boolean(),
+}).superRefine((input, context) => {
+  if (input.decision === "approved" && !input.confirmedConsistent) {
+    context.addIssue({ code: "custom", message: "Confirmez que le document, le selfie et le profil sont cohérents avant de valider." });
+  }
+  if (input.decision === "rejected" && input.note.trim().length < 8) {
+    context.addIssue({ code: "custom", message: "Indiquez un motif de refus précis pour aider le membre à corriger son dossier." });
+  }
+});
 
 function getFileFromDataUrl(dataUrl: string) {
   const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -138,7 +151,7 @@ export const marketplaceRouter = router({
     overview: adminProcedure.query(() => db.getAdminOverview()),
     listings: adminProcedure.query(() => db.getAdminListings()),
     pendingVerifications: adminProcedure.query(() => db.getPendingVerifications()),
-    reviewVerification: adminProcedure.input(z.object({ verificationId: z.number().int().positive(), decision: z.enum(["approved", "rejected"]), note: z.string().trim().max(1000).default("") })).mutation(async ({ ctx, input }) => {
+    reviewVerification: adminProcedure.input(verificationReviewSchema).mutation(async ({ ctx, input }) => {
       const verification = await db.reviewVerification(input.verificationId, ctx.user.id, input.decision, input.note);
       const notification = resolveVerificationDecision(input.decision, verification.selfieKey, input.note).notification;
       await db.createNotification({ userId: verification.userId, type: "verification", ...notification });

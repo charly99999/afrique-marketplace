@@ -237,7 +237,18 @@ export async function getAdminOverview() {
 export async function getPendingVerifications() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(verifications).where(eq(verifications.status, "pending")).orderBy(desc(verifications.createdAt)).limit(100);
+  return db.select({
+    id: verifications.id,
+    userId: verifications.userId,
+    documentType: verifications.documentType,
+    documentKey: verifications.documentKey,
+    selfieKey: verifications.selfieKey,
+    createdAt: verifications.createdAt,
+    firstName: profiles.firstName,
+    lastName: profiles.lastName,
+    phone: profiles.phone,
+    city: profiles.city,
+  }).from(verifications).innerJoin(profiles, eq(verifications.userId, profiles.userId)).where(eq(verifications.status, "pending")).orderBy(desc(verifications.createdAt)).limit(100);
 }
 
 export async function getAdminListings() {

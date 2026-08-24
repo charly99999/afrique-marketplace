@@ -64,3 +64,9 @@
 - [x] Revalider sur ordinateur les écrans de document, selfie, couverture et média d’annonce après compression.
 - [x] Ajouter des tests de compression image réussie et de rejet explicite lorsqu’une image reste trop lourde.
 - [x] Tester le flux réel de compression d’une image source volumineuse jusqu’à une taille acceptée.
+- [x] Afficher au modérateur le document, le selfie et les informations du profil dans un même dossier de vérification.
+- [x] Exiger une confirmation explicite de cohérence avant toute validation administrative.
+- [x] Rendre le motif obligatoire en cas de refus et l’afficher clairement au membre concerné.
+- [x] Tester les décisions d’approbation, de maintien en attente et de refus motivé.
+- [x] Afficher au membre le motif administratif détaillé lorsqu’une vérification est refusée.
+- [x] Clarifier que le dossier reste en attente tant qu’aucune décision administrative n’est enregistrée, puis couvrir cet état par test.

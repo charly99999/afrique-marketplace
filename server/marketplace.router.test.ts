@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 const { dbMock } = vi.hoisted(() => ({
   dbMock: {
     getProfile: vi.fn(),
+    getLatestVerification: vi.fn(),
     findOrCreateConversation: vi.fn(),
   createMessage: vi.fn(),
   createNotification: vi.fn(),
@@ -46,8 +47,26 @@ describe("flux métier marketplace", () => {
 
   it("notifie la décision de vérification après revue administrative", async () => {
     dbMock.reviewVerification.mockResolvedValueOnce({ userId: 22 });
-    await caller("admin").admin.reviewVerification({ verificationId: 8, decision: "approved", note: "" });
+    await caller("admin").admin.reviewVerification({ verificationId: 8, decision: "approved", note: "", confirmedConsistent: true });
     expect(dbMock.reviewVerification).toHaveBeenCalledWith(8, 11, "approved", "");
     expect(dbMock.createNotification).toHaveBeenCalledWith({ userId: 22, type: "verification", title: "Profil vérifié", body: "Votre badge vérifié est désormais actif." });
+  });
+
+  it("interdit une validation sans confirmation de cohérence du dossier", async () => {
+    await expect(caller("admin").admin.reviewVerification({ verificationId: 8, decision: "approved", note: "", confirmedConsistent: false })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("exige un motif exploitable lorsqu’un dossier est refusé", async () => {
+    await expect(caller("admin").admin.reviewVerification({ verificationId: 8, decision: "rejected", note: "flou", confirmedConsistent: false })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("conserve le statut en attente tant qu’aucune décision n’est enregistrée", async () => {
+    dbMock.getLatestVerification.mockResolvedValueOnce({ id: 8, documentType: "cni", status: "pending", adminNote: null, createdAt: new Date() });
+    await expect(caller().verification.mine()).resolves.toMatchObject({ id: 8, status: "pending" });
+  });
+
+  it("transmet le motif de refus au membre pour sa nouvelle soumission", async () => {
+    dbMock.getLatestVerification.mockResolvedValueOnce({ id: 8, documentType: "cni", status: "rejected", adminNote: "Le document est illisible, veuillez reprendre une photo nette.", createdAt: new Date() });
+    await expect(caller().verification.mine()).resolves.toMatchObject({ status: "rejected", adminNote: "Le document est illisible, veuillez reprendre une photo nette." });
   });
 });
