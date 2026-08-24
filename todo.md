@@ -96,3 +96,6 @@
 - [x] Documenter les limites réalistes de stockage et d’hébergement pour la montée en charge de la plateforme.
 - [x] Ajouter une requête sécurisée pour les annonces publiées du membre et les afficher dans son profil avec états vide, chargement et erreur.
 - [x] Rédiger et livrer une note de montée en charge exposant les limites actuelles, le stockage, les critères de renforcement et le canal officiel pour les coûts.
+- [x] Définir une projection publique du vendeur qui expose uniquement les informations autorisées et ses annonces publiées.
+- [x] Créer une page vendeur partageable et lier les cartes vendeur des annonces à cette page.
+- [x] Tester les accès publics, la confidentialité des coordonnées et le rendu web/Android de la page vendeur.

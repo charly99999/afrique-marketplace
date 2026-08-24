@@ -194,6 +194,34 @@ export async function getPublicProfile(userId: number) {
   return result[0];
 }
 
+export async function getPublicSellerProfile(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select({
+    userId: profiles.userId,
+    firstName: profiles.firstName,
+    lastName: profiles.lastName,
+    phone: profiles.phone,
+    city: profiles.city,
+    bio: profiles.bio,
+    businessCategory: profiles.businessCategory,
+    businessHours: profiles.businessHours,
+    address: profiles.address,
+    website: profiles.website,
+    contactEmail: profiles.contactEmail,
+    profilePhotoKey: profiles.profilePhotoKey,
+    coverPhotoKey: profiles.coverPhotoKey,
+    verificationStatus: profiles.verificationStatus,
+  }).from(profiles).where(and(eq(profiles.userId, userId), eq(profiles.verificationStatus, "verified"))).limit(1);
+  return result[0];
+}
+
+export async function getListingsForPublicSeller(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(listings).where(and(eq(listings.userId, userId), eq(listings.status, "published"))).orderBy(desc(listings.createdAt)).limit(30);
+}
+
 export async function findOrCreateConversation(buyerId: number, sellerId: number, listingId?: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

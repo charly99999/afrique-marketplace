@@ -98,6 +98,16 @@ export const marketplaceRouter = router({
       return db.updateProfileDetails(ctx.user.id, input);
     }),
   }),
+  sellers: router({
+    detail: publicProcedure.input(z.object({ userId: z.number().int().positive() })).query(async ({ input }) => {
+      const seller = await db.getPublicSellerProfile(input.userId);
+      if (!seller) throw new TRPCError({ code: "NOT_FOUND", message: "Ce profil vendeur n’est pas disponible." });
+      return {
+        seller: { ...seller, phone: visibleSellerPhone(seller.verificationStatus, seller.phone) },
+        listings: await db.getListingsForPublicSeller(input.userId),
+      };
+    }),
+  }),
   verification: router({
     mine: protectedProcedure.query(async ({ ctx }) => {
       const verification = await db.getLatestVerification(ctx.user.id);

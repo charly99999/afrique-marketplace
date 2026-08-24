@@ -6,6 +6,8 @@ const { dbMock, analyzeVerificationWithAiMock } = vi.hoisted(() => ({
     getProfile: vi.fn(),
     updateProfileDetails: vi.fn(),
     getListingsForUser: vi.fn(),
+    getPublicSellerProfile: vi.fn(),
+    getListingsForPublicSeller: vi.fn(),
     getLatestVerification: vi.fn(),
     getVerificationDossier: vi.fn(),
     saveAiVerificationReview: vi.fn(),
@@ -54,6 +56,21 @@ describe("flux métier marketplace", () => {
 
     await expect(caller().listings.mine()).resolves.toEqual([{ id: 31, userId: 11, title: "Appartement à louer", status: "published" }]);
     expect(dbMock.getListingsForUser).toHaveBeenCalledWith(11);
+  });
+
+  it("expose un vendeur vérifié et ses annonces publiées via une route partageable", async () => {
+    dbMock.getPublicSellerProfile.mockResolvedValueOnce({ userId: 22, firstName: "Awa", lastName: "Traoré", phone: "+22501020304", city: "Abidjan", verificationStatus: "verified" });
+    dbMock.getListingsForPublicSeller.mockResolvedValueOnce([{ id: 41, userId: 22, title: "Terrain à vendre", status: "published" }]);
+
+    const publicSeller = await caller().sellers.detail({ userId: 22 });
+    expect(publicSeller).toMatchObject({ seller: { firstName: "Awa", phone: "+22501020304", verificationStatus: "verified" }, listings: [{ id: 41, userId: 22 }] });
+    expect(publicSeller.seller).not.toHaveProperty("passwordHash");
+    expect(dbMock.getListingsForPublicSeller).toHaveBeenCalledWith(22);
+  });
+
+  it("ne rend pas public un profil vendeur non vérifié", async () => {
+    dbMock.getPublicSellerProfile.mockResolvedValueOnce(undefined);
+    await expect(caller().sellers.detail({ userId: 23 })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("crée un message et une alerte pour le destinataire", async () => {
