@@ -40,3 +40,14 @@
 - [x] Ajouter une validation automatisée du lien d’appel direct réservé aux vendeurs vérifiés.
 - [x] Appliquer la suppression définitive, explicitement approuvée, de la table vide d’appels historiques.
 - [x] Vérifier le lien `tel:` produit pour un vendeur vérifié après la dernière adaptation.
+- [x] Remplacer la redirection d’authentification externe par une connexion interne avec numéro de téléphone et mot de passe.
+- [x] Créer les écrans intégrés d’inscription et de connexion, accessibles sans quitter Afrique Marketplace.
+- [x] Mettre en place une session sécurisée propre à l’application et protéger les parcours privés.
+- [x] Préserver la compatibilité des profils existants tout en imposant l’unicité du téléphone pour les nouveaux comptes internes.
+- [x] Tester l’inscription, la connexion, la déconnexion et les accès privés sur web et Android.
+- [x] Ajouter un test de connexion d’un profil historique déjà associé à un numéro et à un mot de passe chiffré.
+- [x] Vérifier l’absence de doublons de numéros avant la contrainte d’unicité : aucun doublon trouvé.
+- [x] Revalider les flux d’inscription, connexion, déconnexion et accès privé sur web et Android après la session interne.
+- [x] Réaliser une validation finale complète des écrans compte, profil et parcours privé sur web et Android après l’authentification interne.
+- [x] Ajouter un test de cycle de session interne signé et vérifié, puis confirmer l’accès aux écrans privés sans redirection externe.
+- [x] Ajouter une preuve automatisée du passage d’une session téléphone vérifiée aux procédures privées de profil, vérification et messagerie.

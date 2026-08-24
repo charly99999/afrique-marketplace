@@ -4,6 +4,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Admin from "./pages/Admin";
+import Account from "./pages/Account";
 import Home from "./pages/Home";
 import Listings from "./pages/Listings";
 import ListingDetail from "./pages/ListingDetail";
@@ -14,7 +15,7 @@ import Sell from "./pages/Sell";
 import Verification from "./pages/Verification";
 
 function Router() {
-  return <Switch><Route path="/" component={Home} /><Route path="/annonces" component={Listings} /><Route path="/annonce/:id">{params => <ListingDetail id={params.id} />}</Route><Route path="/profil" component={Profile} /><Route path="/verification" component={Verification} /><Route path="/vendre" component={Sell} /><Route path="/messages" component={Messages} /><Route path="/administration" component={Admin} /><Route path="/404" component={NotFound} /><Route component={NotFound} /></Switch>;
+  return <Switch><Route path="/" component={Home} /><Route path="/compte" component={Account} /><Route path="/annonces" component={Listings} /><Route path="/annonce/:id">{params => <ListingDetail id={params.id} />}</Route><Route path="/profil" component={Profile} /><Route path="/verification" component={Verification} /><Route path="/vendre" component={Sell} /><Route path="/messages" component={Messages} /><Route path="/administration" component={Admin} /><Route path="/404" component={NotFound} /><Route component={NotFound} /></Switch>;
 }
 
 function App() {

@@ -6,7 +6,6 @@ import { type ChangeEvent, useState } from "react";
 import { Link } from "wouter";
 import { MarketplaceShell } from "@/components/MarketplaceShell";
 import { QueryErrorState } from "@/components/QueryErrorState";
-import { startLogin } from "@/const";
 
 function VerificationState({ state }: { state?: string }) {
   if (state === "verified") return <span className="status-chip status-chip--verified"><ShieldCheck size={15} /> Profil vérifié</span>;
@@ -32,7 +31,7 @@ export default function Profile() {
     if (file) cover.mutate({ dataUrl: await fileToDataUrl(file) });
   };
 
-  if (!isAuthenticated) return <MarketplaceShell title="Mon espace"><section className="page-wrap section-space"><div className="gate-card"><LockKeyhole size={28} /><h2>Votre espace sécurisé vous attend.</h2><p>Accédez à votre profil pour finaliser votre inscription sans e-mail et enclencher la vérification obligatoire.</p><button className="button button--gold" onClick={() => startLogin()}>Continuer</button></div></section></MarketplaceShell>;
+  if (!isAuthenticated) return <MarketplaceShell title="Mon espace"><section className="page-wrap section-space"><div className="gate-card"><LockKeyhole size={28} /><h2>Votre espace sécurisé vous attend.</h2><p>Accédez à votre profil pour finaliser votre inscription sans e-mail et enclencher la vérification obligatoire.</p><Link href="/compte" className="button button--gold">Continuer</Link></div></section></MarketplaceShell>;
 
   const data = profile.data;
   return <MarketplaceShell title="Mon profil" action={data ? <VerificationState state={data.verificationStatus} /> : undefined}>

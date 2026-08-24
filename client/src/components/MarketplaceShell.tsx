@@ -1,5 +1,4 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { startLogin } from "@/const";
 import { Bell, CircleUserRound, MessageCircle, Plus, Search, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
@@ -32,7 +31,7 @@ export function MarketplaceShell({ children, title, action }: MarketplaceShellPr
                 <Link href="/messages" className="icon-button notification-button" aria-label="Mes alertes"><Bell size={20} />{unread > 0 && <span>{unread}</span>}</Link>
               </>
             ) : (
-              <button onClick={() => startLogin()} className="button button--outline">Accéder à mon espace</button>
+              <Link href="/compte" className="button button--outline">Accéder à mon espace</Link>
             )}
           </div>
         </div>

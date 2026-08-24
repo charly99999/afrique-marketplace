@@ -52,6 +52,34 @@ export async function getUserByOpenId(openId: string) {
   return result[0];
 }
 
+export async function getAuthUserByPhone(phone: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select({
+    id: users.id,
+    openId: users.openId,
+    name: users.name,
+    email: users.email,
+    loginMethod: users.loginMethod,
+    role: users.role,
+    createdAt: users.createdAt,
+    updatedAt: users.updatedAt,
+    lastSignedIn: users.lastSignedIn,
+    passwordHash: profiles.passwordHash,
+  }).from(profiles).innerJoin(users, eq(profiles.userId, users.id)).where(eq(profiles.phone, phone)).limit(1);
+  return result[0];
+}
+
+export async function createPhoneUser(payload: { firstName: string; lastName: string; phone: string; city: string; passwordHash: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const openId = `phone:${payload.phone}`;
+  const userResult = await db.insert(users).values({ openId, name: `${payload.firstName} ${payload.lastName}`, loginMethod: "phone" });
+  const userId = Number(userResult[0].insertId);
+  await db.insert(profiles).values({ userId, firstName: payload.firstName, lastName: payload.lastName, phone: payload.phone, city: payload.city, passwordHash: payload.passwordHash });
+  return (await getUserByOpenId(openId))!;
+}
+
 export async function getProfile(userId: number) {
   const db = await getDb();
   if (!db) return undefined;

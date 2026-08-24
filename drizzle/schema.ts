@@ -17,7 +17,7 @@ export const profiles = mysqlTable("profiles", {
   userId: int("userId").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
   firstName: varchar("firstName", { length: 80 }).notNull(),
   lastName: varchar("lastName", { length: 80 }).notNull(),
-  phone: varchar("phone", { length: 32 }).notNull(),
+  phone: varchar("phone", { length: 32 }).notNull().unique(),
   city: varchar("city", { length: 100 }).notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
   profilePhotoKey: varchar("profilePhotoKey", { length: 1024 }),

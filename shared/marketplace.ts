@@ -22,6 +22,10 @@ export const registrationSchema = z.object({
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères").max(128),
 });
 
+export function normalizePhone(phone: string) {
+  return phone.replace(/[\s().-]/g, "");
+}
+
 export const listingCreateSchema = z.object({
   title: z.string().trim().min(6, "Le titre doit contenir au moins 6 caractères").max(140),
   description: z.string().trim().min(20, "Décrivez davantage votre annonce").max(5000),

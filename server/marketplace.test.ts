@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPublishWithVerification, directCallHref, isKnownCategory, listingCreateSchema, moderationStatuses, profileUpdateForVerification, registrationSchema, resolveVerificationDecision, verificationNotification, visibleSellerPhone } from "../shared/marketplace";
+import { canPublishWithVerification, directCallHref, isKnownCategory, listingCreateSchema, moderationStatuses, normalizePhone, profileUpdateForVerification, registrationSchema, resolveVerificationDecision, verificationNotification, visibleSellerPhone } from "../shared/marketplace";
 
 describe("règles de marketplace", () => {
   it("accepte une inscription avec téléphone et mot de passe sans adresse e-mail", () => {
@@ -52,5 +52,9 @@ describe("règles de marketplace", () => {
 
   it("construit un lien tel: sûr à partir du numéro affiché", () => {
     expect(directCallHref("+221 77 000 00 00")).toBe("tel:+221770000000");
+  });
+
+  it("normalise le numéro de téléphone avant de l’utiliser comme identifiant", () => {
+    expect(normalizePhone("+221 (77) 000-00-00")).toBe("+221770000000");
   });
 });

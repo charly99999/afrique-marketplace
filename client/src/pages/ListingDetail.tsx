@@ -6,14 +6,14 @@ import { trpc } from "@/lib/trpc";
 import { directCallHref } from "@shared/marketplace";
 import { BadgeCheck, ChevronLeft, MapPin, MessageCircle, Phone, ShieldCheck, Video } from "lucide-react";
 import { useState } from "react";
-import { Link } from "wouter";
-import { startLogin } from "@/const";
+import { Link, useLocation } from "wouter";
 
 function formatPrice(value: string | number, currency: string) { return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(value)) + ` ${currency}`; }
 
 export default function ListingDetail({ id }: { id: string }) {
   const listingId = Number(id);
   const { isAuthenticated, user } = useAuth();
+  const [, navigate] = useLocation();
   const data = trpc.marketplace.listings.detail.useQuery({ id: listingId }, { enabled: Number.isFinite(listingId) });
   const [message, setMessage] = useState("");
   const send = trpc.marketplace.conversations.send.useMutation();
@@ -24,7 +24,7 @@ export default function ListingDetail({ id }: { id: string }) {
   if (!listing || !seller) return <MarketplaceShell><section className="page-wrap section-space"><div className="gate-card"><h2>Cette annonce n’est plus disponible.</h2><Link href="/annonces" className="button button--gold">Voir les annonces</Link></div></section></MarketplaceShell>;
   const contact = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!isAuthenticated) return startLogin();
+    if (!isAuthenticated) return navigate("/compte");
     if (!message.trim()) return;
     send.mutate({ recipientId: listing.userId, listingId: listing.id, body: message });
   };
