@@ -1,5 +1,6 @@
 import { Camera, Check, RefreshCcw, Smartphone, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { compressImageDataUrl, mediaErrorMessage } from "@/lib/media";
 
 type CameraCaptureProps = {
   title: string;
@@ -79,11 +80,15 @@ export function CameraCapture({ title, hint, onCapture }: CameraCaptureProps) {
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result);
-      setImage(dataUrl);
-      onCapture(dataUrl);
-      setError(undefined);
+    reader.onload = async () => {
+      try {
+        const dataUrl = await compressImageDataUrl(String(reader.result), 1200);
+        setImage(dataUrl);
+        onCapture(dataUrl);
+        setError(undefined);
+      } catch (error) {
+        setError(mediaErrorMessage(error));
+      }
     };
     reader.onerror = () => setError("La photo prise avec l’appareil n’a pas pu être lue. Réessayez.");
     reader.readAsDataURL(file);

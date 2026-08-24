@@ -56,3 +56,11 @@
 - [x] Renforcer les messages d’autorisation, de compatibilité et d’erreur de capture selfie.
 - [x] Revalider les flux document, selfie, couverture et médias d’annonce sur web et Android.
 - [x] Réaliser une validation visuelle complète sur ordinateur et Android des écrans document, selfie, couverture et média d’annonce après le correctif caméra.
+- [x] Compresser automatiquement document et selfie avant soumission de vérification.
+- [x] Réduire et contrôler les images de couverture et médias d’annonce avant téléversement.
+- [x] Remplacer les erreurs techniques de taille par des messages d’action compréhensibles.
+- [x] Tester les limites de taille et les soumissions média sur web et Android.
+- [x] Ajouter des tests automatisés des limites et messages d’erreur média.
+- [x] Revalider sur ordinateur les écrans de document, selfie, couverture et média d’annonce après compression.
+- [x] Ajouter des tests de compression image réussie et de rejet explicite lorsqu’une image reste trop lourde.
+- [x] Tester le flux réel de compression d’une image source volumineuse jusqu’à une taille acceptée.
