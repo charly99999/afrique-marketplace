@@ -1,0 +1,35 @@
+# Project TODO
+
+- [x] Définir le schéma de données sécurisé des profils, vérifications, annonces, médias, conversations, évaluations et alertes.
+- [x] Configurer un parcours d’inscription sans e-mail avec nom, prénom, téléphone, ville et mot de passe.
+- [x] Mettre en œuvre une vérification obligatoire par document et selfie pris depuis la caméra, avec statut de validation administratif.
+- [x] Enregistrer le selfie validé comme photo de profil et afficher un badge vérifié aux profils approuvés.
+- [x] Permettre l’ajout d’une photo de couverture depuis la galerie ou l’appareil photo.
+- [x] Créer un logo original associant la silhouette de l’Afrique et une tête d’éléphant dorée.
+- [x] Mettre en place le thème visuel premium noir, blanc et or, optimisé pour les écrans web et Android.
+- [x] Ajouter un manifeste d’application web progressive installable depuis Android.
+- [x] Concevoir l’accueil, la navigation et les parcours de découverte de la marketplace.
+- [x] Créer les catégories d’annonces, dont immobilier, véhicules et téléphones.
+- [x] Permettre la publication et la consultation de contenus avec photos ou vidéos, sans stocker les fichiers binaires en base de données.
+- [x] Implémenter une recherche avancée avec filtres de catégorie, localisation et critères d’annonce.
+- [x] Ajouter une messagerie instantanée entre acheteurs et vendeurs.
+- [x] Préparer les flux d’appel audio et vidéo entre acheteurs et vendeurs avec signalisation sécurisée.
+- [x] Ajouter des avis et notes après interaction entre utilisateurs.
+- [x] Créer des alertes pour nouveaux messages, décisions de vérification et nouveaux avis.
+- [x] Créer un tableau de bord administrateur pour les utilisateurs, vérifications et contenus.
+- [ ] Finaliser une signalisation WebRTC contrôlée par jetons pour les appels audio et vidéo avant mise en production.
+- [ ] Connecter une authentification téléphonique avec OTP et un prestataire SMS avant mise en production afin que le mot de passe devienne un moyen de connexion indépendant.
+- [x] Ajouter les contrôles d’accès, états vides, erreurs et garde-fous de modération nécessaires.
+- [x] Ajouter dans l’administration une modération des annonces avec actions publier, masquer et supprimer, ainsi qu’un refus explicite pour les non-administrateurs.
+- [x] Étendre les tests aux règles critiques de vérification, publication, notification et modération.
+- [x] Renforcer les écrans vides et l’identité de marque après revue visuelle web et Android.
+- [x] Écrire et exécuter des tests unitaires des règles métier critiques.
+- [x] Vérifier visuellement les écrans web et Android, puis corriger les défauts responsive.
+- [x] Ajouter des états d’erreur dédiés pour les requêtes principales et effectuer une dernière revue complète web et Android.
+- [x] Ajouter les états d’erreur restants au détail d’annonce et aux parcours de profil/vérification.
+- [x] Couvrir par tests le traitement administratif complet de vérification et l’alerte de décision associée.
+- [x] Renforcer la signature visuelle de marque et les états vides avec un motif de confiance contemporain.
+- [x] Revalider tous les parcours prioritaires sur web et Android après les derniers compléments.
+- [x] Corriger le retour de profil vide pour afficher l’inscription plutôt qu’un état d’erreur.
+- [x] Ajouter un test combiné de décision administrative couvrant statut, selfie de profil et notification de vérification.
+- [x] Refaire une validation visuelle complète des parcours prioritaires sur ordinateur et Android après le dernier correctif.
