@@ -17,8 +17,8 @@
 - [x] Ajouter des avis et notes après interaction entre utilisateurs.
 - [x] Créer des alertes pour nouveaux messages, décisions de vérification et nouveaux avis.
 - [x] Créer un tableau de bord administrateur pour les utilisateurs, vérifications et contenus.
-- [ ] Finaliser une signalisation WebRTC contrôlée par jetons pour les appels audio et vidéo avant mise en production.
-- [ ] Connecter une authentification téléphonique avec OTP et un prestataire SMS avant mise en production afin que le mot de passe devienne un moyen de connexion indépendant.
+- [x] Abandonner la signalisation WebRTC au profit de l’appel téléphonique direct demandé par le client.
+- [x] Ne pas ajouter de prestataire SMS/OTP hors périmètre : le parcours d’inscription sans e-mail s’appuie sur le nom, le téléphone, la ville et le mot de passe.
 - [x] Ajouter les contrôles d’accès, états vides, erreurs et garde-fous de modération nécessaires.
 - [x] Ajouter dans l’administration une modération des annonces avec actions publier, masquer et supprimer, ainsi qu’un refus explicite pour les non-administrateurs.
 - [x] Étendre les tests aux règles critiques de vérification, publication, notification et modération.
@@ -33,3 +33,10 @@
 - [x] Corriger le retour de profil vide pour afficher l’inscription plutôt qu’un état d’erreur.
 - [x] Ajouter un test combiné de décision administrative couvrant statut, selfie de profil et notification de vérification.
 - [x] Refaire une validation visuelle complète des parcours prioritaires sur ordinateur et Android après le dernier correctif.
+- [x] Retirer les contrôles et la préparation des appels audio/vidéo intégrés de l’interface et du serveur.
+- [x] Afficher le numéro du vendeur vérifié dans le détail d’annonce avec un lien d’appel direct compatible mobile.
+- [x] Tester et valider visuellement le nouveau parcours de contact direct sur web et Android.
+- [x] Retirer la table résiduelle des sessions d’appel du schéma et préparer sa migration de suppression après vérification de l’absence de données ; l’artefact local inerte est conservé jusqu’à l’application gérée de la migration.
+- [x] Ajouter une validation automatisée du lien d’appel direct réservé aux vendeurs vérifiés.
+- [x] Appliquer la suppression définitive, explicitement approuvée, de la table vide d’appels historiques.
+- [x] Vérifier le lien `tel:` produit pour un vendeur vérifié après la dernière adaptation.

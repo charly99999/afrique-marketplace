@@ -1,7 +1,6 @@
 import { and, desc, eq, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
-  callSessions,
   conversations,
   InsertUser,
   listings,
@@ -127,6 +126,7 @@ export async function getPublicProfile(userId: number) {
   if (!db) return undefined;
   const result = await db.select({
     firstName: profiles.firstName,
+    phone: profiles.phone,
     city: profiles.city,
     profilePhotoKey: profiles.profilePhotoKey,
     verificationStatus: profiles.verificationStatus,
@@ -168,12 +168,6 @@ export async function createMessage(payload: typeof messages.$inferInsert) {
   if (!db) throw new Error("Database unavailable");
   await db.insert(messages).values(payload);
   await db.update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, payload.conversationId));
-}
-
-export async function createCall(payload: typeof callSessions.$inferInsert) {
-  const db = await getDb();
-  if (!db) throw new Error("Database unavailable");
-  await db.insert(callSessions).values(payload);
 }
 
 export async function createReview(payload: typeof reviews.$inferInsert) {

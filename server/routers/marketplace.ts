@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { randomBytes, randomUUID, scryptSync } from "crypto";
 import { z } from "zod";
-import { canPublishWithVerification, MARKETPLACE_CATEGORIES, listingCreateSchema, moderationStatuses, registrationSchema, resolveVerificationDecision } from "../../shared/marketplace";
+import { canPublishWithVerification, MARKETPLACE_CATEGORIES, listingCreateSchema, moderationStatuses, registrationSchema, resolveVerificationDecision, visibleSellerPhone } from "../../shared/marketplace";
 import * as db from "../db";
 import { notifyOwner } from "../_core/notification";
 import { storagePut } from "../storage";
@@ -85,7 +85,8 @@ export const marketplaceRouter = router({
     detail: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
       const listing = await db.getListing(input.id);
       if (!listing || listing.status !== "published") throw new TRPCError({ code: "NOT_FOUND", message: "Annonce introuvable" });
-      return { listing, seller: await db.getPublicProfile(listing.userId) };
+      const seller = await db.getPublicProfile(listing.userId);
+      return { listing, seller: seller ? { ...seller, phone: visibleSellerPhone(seller.verificationStatus, seller.phone) } : null };
     }),
     create: protectedProcedure.input(listingCreateSchema).mutation(async ({ ctx, input }) => {
       const profile = await db.getProfile(ctx.user.id);
@@ -115,11 +116,6 @@ export const marketplaceRouter = router({
       await db.createMessage({ conversationId: input.conversationId, senderId: ctx.user.id, body: input.body });
       await db.createNotification({ userId: recipientId, type: "message", title: "Nouveau message", body: "Un acheteur ou vendeur vous a contacté." });
       return { success: true };
-    }),
-    requestCall: protectedProcedure.input(z.object({ conversationId: z.number().int().positive(), mode: z.enum(["audio", "video"]) })).mutation(async ({ ctx, input }) => {
-      assertConversationMember(await db.getConversation(input.conversationId), ctx.user.id);
-      await db.createCall({ conversationId: input.conversationId, initiatedBy: ctx.user.id, mode: input.mode });
-      return { status: "requested" as const };
     }),
   }),
   reviews: router({

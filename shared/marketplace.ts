@@ -62,4 +62,13 @@ export function resolveVerificationDecision(decision: "approved" | "rejected", s
   };
 }
 
+export function visibleSellerPhone(verificationStatus: string | null | undefined, phone: string | null | undefined) {
+  return verificationStatus === "verified" ? phone ?? null : null;
+}
+
+export function directCallHref(phone: string) {
+  const normalized = phone.replace(/[^+\d]/g, "");
+  return `tel:${normalized}`;
+}
+
 export const moderationStatuses = ["published", "hidden", "removed"] as const;

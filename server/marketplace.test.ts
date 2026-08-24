@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPublishWithVerification, isKnownCategory, listingCreateSchema, moderationStatuses, profileUpdateForVerification, registrationSchema, resolveVerificationDecision, verificationNotification } from "../shared/marketplace";
+import { canPublishWithVerification, directCallHref, isKnownCategory, listingCreateSchema, moderationStatuses, profileUpdateForVerification, registrationSchema, resolveVerificationDecision, verificationNotification, visibleSellerPhone } from "../shared/marketplace";
 
 describe("règles de marketplace", () => {
   it("accepte une inscription avec téléphone et mot de passe sans adresse e-mail", () => {
@@ -43,5 +43,14 @@ describe("règles de marketplace", () => {
       profile: { verificationStatus: "verified", profilePhotoKey: "selfies/live-42.jpg" },
       notification: { title: "Profil vérifié", body: "Votre badge vérifié est désormais actif." },
     });
+  });
+
+  it("n’expose le numéro direct que pour un vendeur vérifié", () => {
+    expect(visibleSellerPhone("verified", "+221 77 000 00 00")).toBe("+221 77 000 00 00");
+    expect(visibleSellerPhone("pending", "+221 77 000 00 00")).toBeNull();
+  });
+
+  it("construit un lien tel: sûr à partir du numéro affiché", () => {
+    expect(directCallHref("+221 77 000 00 00")).toBe("tel:+221770000000");
   });
 });

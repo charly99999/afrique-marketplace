@@ -74,16 +74,6 @@ export const messages = mysqlTable("messages", {
   readAt: timestamp("readAt"),
 }, table => [index("message_conversation_idx").on(table.conversationId, table.createdAt)]);
 
-export const callSessions = mysqlTable("callSessions", {
-  id: int("id").autoincrement().primaryKey(),
-  conversationId: int("conversationId").notNull().references(() => conversations.id, { onDelete: "cascade" }),
-  initiatedBy: int("initiatedBy").notNull().references(() => users.id, { onDelete: "cascade" }),
-  mode: mysqlEnum("mode", ["audio", "video"]).notNull(),
-  status: mysqlEnum("status", ["requested", "accepted", "ended", "missed"]).default("requested").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  endedAt: timestamp("endedAt"),
-}, table => [index("call_conversation_idx").on(table.conversationId)]);
-
 export const reviews = mysqlTable("reviews", {
   id: int("id").autoincrement().primaryKey(),
   fromUserId: int("fromUserId").notNull().references(() => users.id, { onDelete: "cascade" }),
