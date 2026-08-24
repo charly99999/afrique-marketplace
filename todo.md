@@ -51,3 +51,8 @@
 - [x] Réaliser une validation finale complète des écrans compte, profil et parcours privé sur web et Android après l’authentification interne.
 - [x] Ajouter un test de cycle de session interne signé et vérifié, puis confirmer l’accès aux écrans privés sans redirection externe.
 - [x] Ajouter une preuve automatisée du passage d’une session téléphone vérifiée aux procédures privées de profil, vérification et messagerie.
+- [x] Diagnostiquer et corriger l’aperçu noir ou figé de la caméra selfie sur Android.
+- [x] Ajouter une solution de repli caméra directe lorsque l’aperçu navigateur n’est pas disponible.
+- [x] Renforcer les messages d’autorisation, de compatibilité et d’erreur de capture selfie.
+- [x] Revalider les flux document, selfie, couverture et médias d’annonce sur web et Android.
+- [x] Réaliser une validation visuelle complète sur ordinateur et Android des écrans document, selfie, couverture et média d’annonce après le correctif caméra.
