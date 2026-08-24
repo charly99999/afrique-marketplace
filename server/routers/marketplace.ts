@@ -5,6 +5,8 @@ import { canPublishWithVerification, MARKETPLACE_CATEGORIES, listingCreateSchema
 import * as db from "../db";
 import { notifyOwner } from "../_core/notification";
 import { storagePut } from "../storage";
+import { analyzeVerificationWithAi } from "../verificationAi";
+import { decideFromAiReview } from "../../shared/verificationAi";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 
 const dataUrlSchema = z.string().regex(/^data:(image\/(jpeg|jpg|png|webp)|video\/(mp4|webm));base64,/, "Format de média non pris en charge").max(3_000_000);
@@ -49,12 +51,28 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next();
 });
 
+async function runAiVerification(verificationId: number) {
+  const dossier = await db.getVerificationDossier(verificationId);
+  if (!dossier) throw new TRPCError({ code: "NOT_FOUND", message: "Dossier de vérification introuvable." });
+  const review = await analyzeVerificationWithAi(dossier);
+  await db.saveAiVerificationReview(verificationId, review);
+  const outcome = decideFromAiReview(review);
+  if (outcome.decision === "pending") {
+    await notifyOwner({ title: "Dossier IA à examiner", content: `Le profil ${dossier.userId} nécessite une revue complémentaire : ${outcome.note}` });
+    return { id: dossier.id, status: "pending" as const, aiStatus: "manual_review" as const };
+  }
+  const decided = await db.applyAutomatedVerificationDecision(verificationId, outcome.decision, outcome.note);
+  const notification = resolveVerificationDecision(outcome.decision, decided.selfieKey, outcome.note).notification;
+  await db.createNotification({ userId: decided.userId, type: "verification", ...notification });
+  return { id: dossier.id, status: outcome.decision, aiStatus: "decided" as const };
+}
+
 export const marketplaceRouter = router({
   catalog: router({
     categories: protectedProcedure.query(() => MARKETPLACE_CATEGORIES),
   }),
   profile: router({
-    mine: protectedProcedure.query(async ({ ctx }) => (await db.getProfile(ctx.user.id)) ?? null),
+    mine: protectedProcedure.query(async ({ ctx }) => (await db.getConsistentProfile(ctx.user.id)) ?? null),
     register: protectedProcedure.input(registrationSchema).mutation(async ({ ctx, input }) => {
       const salt = randomBytes(16).toString("hex");
       const passwordHash = `${salt}:${scryptSync(input.password, salt, 64).toString("hex")}`;
@@ -79,7 +97,7 @@ export const marketplaceRouter = router({
     mine: protectedProcedure.query(async ({ ctx }) => {
       const verification = await db.getLatestVerification(ctx.user.id);
       if (!verification) return null;
-      return { id: verification.id, documentType: verification.documentType, status: verification.status, adminNote: verification.adminNote, createdAt: verification.createdAt };
+      return { id: verification.id, documentType: verification.documentType, status: verification.status, adminNote: verification.adminNote, aiReview: verification.aiReview, aiReviewedAt: verification.aiReviewedAt, createdAt: verification.createdAt };
     }),
     submit: protectedProcedure.input(z.object({ documentType: z.enum(["cni", "passeport", "permis", "carte_scolaire"]), documentData: dataUrlSchema, selfieData: dataUrlSchema })).mutation(async ({ ctx, input }) => {
       const profile = await db.getProfile(ctx.user.id);
@@ -89,8 +107,24 @@ export const marketplaceRouter = router({
         putPrivateFile(`verifications/${ctx.user.id}/selfie`, input.selfieData),
       ]);
       const verification = await db.createVerification({ userId: ctx.user.id, documentType: input.documentType, documentKey: documentFile.key, selfieKey: selfieFile.key });
-      await notifyOwner({ title: "Nouvelle vérification à examiner", content: `Le profil ${ctx.user.id} a soumis une vérification d’identité.` });
-      return { id: verification?.id, status: "pending" as const };
+      if (!verification) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Le dossier de vérification n’a pas pu être créé." });
+      try {
+        return await runAiVerification(verification.id);
+      } catch (error) {
+        console.error("[Verification AI] Analysis unavailable:", error);
+        await notifyOwner({ title: "Dossier à examiner", content: `Le profil ${ctx.user.id} a soumis une vérification qui nécessite une revue.` });
+        return { id: verification.id, status: "pending" as const, aiStatus: "unavailable" as const };
+      }
+    }),
+    analyzeMine: protectedProcedure.mutation(async ({ ctx }) => {
+      const verification = await db.getLatestVerification(ctx.user.id);
+      if (!verification || verification.status !== "pending") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Aucun dossier en attente à analyser." });
+      try {
+        return await runAiVerification(verification.id);
+      } catch (error) {
+        console.error("[Verification AI] Analysis unavailable:", error);
+        return { id: verification.id, status: "pending" as const, aiStatus: "unavailable" as const };
+      }
     }),
   }),
   listings: router({

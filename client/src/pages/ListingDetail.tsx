@@ -14,7 +14,7 @@ export default function ListingDetail({ id }: { id: string }) {
   const listingId = Number(id);
   const { isAuthenticated, user } = useAuth();
   const [, navigate] = useLocation();
-  const data = trpc.marketplace.listings.detail.useQuery({ id: listingId }, { enabled: Number.isFinite(listingId) });
+  const data = trpc.marketplace.listings.detail.useQuery({ id: listingId }, { enabled: Number.isFinite(listingId), refetchInterval: 3000, refetchOnWindowFocus: true });
   const [message, setMessage] = useState("");
   const send = trpc.marketplace.conversations.send.useMutation();
   const listing = data.data?.listing;

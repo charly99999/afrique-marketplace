@@ -45,6 +45,14 @@ describe("règles de marketplace", () => {
     });
   });
 
+  it("fait passer un profil réellement en attente au profil vérifié avec son selfie", () => {
+    const pendingProfile = { verificationStatus: "pending", profilePhotoKey: null };
+    const transition = resolveVerificationDecision("approved", "verifications/42/live-selfie.jpg", "");
+    const approvedProfile = { ...pendingProfile, ...transition.profile };
+    expect(approvedProfile).toEqual({ verificationStatus: "verified", profilePhotoKey: "verifications/42/live-selfie.jpg" });
+    expect(canPublishWithVerification(approvedProfile.verificationStatus)).toBe(true);
+  });
+
   it("n’expose le numéro direct que pour un vendeur vérifié", () => {
     expect(visibleSellerPhone("verified", "+221 77 000 00 00")).toBe("+221 77 000 00 00");
     expect(visibleSellerPhone("pending", "+221 77 000 00 00")).toBeNull();

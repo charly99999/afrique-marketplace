@@ -17,7 +17,7 @@ function VerificationState({ state }: { state?: string }) {
 export default function Profile() {
   const { isAuthenticated, user } = useAuth();
   const utils = trpc.useUtils();
-  const profile = trpc.marketplace.profile.mine.useQuery(undefined, { enabled: isAuthenticated });
+  const profile = trpc.marketplace.profile.mine.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: 3000, refetchOnWindowFocus: true });
   const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", city: "", password: "" });
   const [coverIssue, setCoverIssue] = useState<string>();
   const register = trpc.marketplace.profile.register.useMutation({ onSuccess: () => utils.marketplace.profile.mine.invalidate() });

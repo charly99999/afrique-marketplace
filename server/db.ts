@@ -12,6 +12,7 @@ import {
   verifications,
 } from "../drizzle/schema";
 import { resolveVerificationDecision } from "../shared/marketplace";
+import type { AiVerificationReview } from "../shared/verificationAi";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -85,6 +86,17 @@ export async function getProfile(userId: number) {
   if (!db) return undefined;
   const result = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
   return result[0];
+}
+
+export async function getConsistentProfile(userId: number) {
+  const profile = await getProfile(userId);
+  if (!profile || profile.verificationStatus !== "pending") return profile;
+  const verification = await getLatestVerification(userId);
+  if (verification?.status === "pending") return profile;
+  const db = await getDb();
+  if (!db) return profile;
+  await db.update(profiles).set({ verificationStatus: "required", profilePhotoKey: null }).where(eq(profiles.userId, userId));
+  return getProfile(userId);
 }
 
 export async function saveProfile(payload: typeof profiles.$inferInsert) {
@@ -243,6 +255,8 @@ export async function getPendingVerifications() {
     documentType: verifications.documentType,
     documentKey: verifications.documentKey,
     selfieKey: verifications.selfieKey,
+    aiReview: verifications.aiReview,
+    aiReviewedAt: verifications.aiReviewedAt,
     createdAt: verifications.createdAt,
     firstName: profiles.firstName,
     lastName: profiles.lastName,
@@ -264,15 +278,74 @@ export async function getAdminListings() {
   }).from(listings).orderBy(desc(listings.createdAt)).limit(100);
 }
 
+type VerificationPersistence = {
+  updateVerification: (payload: { id: number; status: "approved" | "rejected"; adminNote: string | null; reviewerId: number | null; reviewedAt: Date }) => Promise<void>;
+  updateProfile: (userId: number, profile: ReturnType<typeof resolveVerificationDecision>["profile"]) => Promise<void>;
+};
+
+export async function persistVerificationDecision(
+  verification: { id: number; userId: number; selfieKey: string },
+  reviewerId: number | null,
+  decision: "approved" | "rejected",
+  note: string,
+  persistence: VerificationPersistence,
+) {
+  const decisionResult = resolveVerificationDecision(decision, verification.selfieKey, note);
+  await persistence.updateVerification({ id: verification.id, status: decision, adminNote: note || null, reviewerId, reviewedAt: new Date() });
+  await persistence.updateProfile(verification.userId, decisionResult.profile);
+  return verification;
+}
+
 export async function reviewVerification(verificationId: number, reviewerId: number, decision: "approved" | "rejected", note: string) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   const verification = (await db.select().from(verifications).where(eq(verifications.id, verificationId)).limit(1))[0];
   if (!verification) throw new Error("Vérification introuvable");
-  const decisionResult = resolveVerificationDecision(decision, verification.selfieKey, note);
-  await db.update(verifications).set({ status: decision, adminNote: note || null, reviewerId, reviewedAt: new Date() }).where(eq(verifications.id, verificationId));
-  await db.update(profiles).set(decisionResult.profile).where(eq(profiles.userId, verification.userId));
-  return verification;
+  return persistVerificationDecision(verification, reviewerId, decision, note, {
+    updateVerification: async payload => {
+      await db.update(verifications).set({ status: payload.status, adminNote: payload.adminNote, reviewerId: payload.reviewerId, reviewedAt: payload.reviewedAt }).where(eq(verifications.id, payload.id));
+    },
+    updateProfile: async (userId, profile) => {
+      await db.update(profiles).set(profile).where(eq(profiles.userId, userId));
+    },
+  });
+}
+
+export async function getVerificationDossier(verificationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const result = await db.select({
+    id: verifications.id,
+    userId: verifications.userId,
+    documentType: verifications.documentType,
+    documentKey: verifications.documentKey,
+    selfieKey: verifications.selfieKey,
+    firstName: profiles.firstName,
+    lastName: profiles.lastName,
+    city: profiles.city,
+  }).from(verifications).innerJoin(profiles, eq(profiles.userId, verifications.userId)).where(eq(verifications.id, verificationId)).limit(1);
+  return result[0];
+}
+
+export async function saveAiVerificationReview(verificationId: number, review: AiVerificationReview) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(verifications).set({ aiReview: JSON.stringify(review), aiReviewedAt: new Date() }).where(eq(verifications.id, verificationId));
+}
+
+export async function applyAutomatedVerificationDecision(verificationId: number, decision: "approved" | "rejected", note: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const verification = (await db.select().from(verifications).where(eq(verifications.id, verificationId)).limit(1))[0];
+  if (!verification) throw new Error("Vérification introuvable");
+  return persistVerificationDecision(verification, null, decision, note, {
+    updateVerification: async payload => {
+      await db.update(verifications).set({ status: payload.status, adminNote: payload.adminNote, reviewerId: null, reviewedAt: payload.reviewedAt }).where(eq(verifications.id, payload.id));
+    },
+    updateProfile: async (userId, profile) => {
+      await db.update(profiles).set(profile).where(eq(profiles.userId, userId));
+    },
+  });
 }
 
 export async function moderateListing(listingId: number, status: "published" | "hidden" | "removed") {

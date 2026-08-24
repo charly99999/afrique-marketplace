@@ -70,3 +70,23 @@
 - [x] Tester les décisions d’approbation, de maintien en attente et de refus motivé.
 - [x] Afficher au membre le motif administratif détaillé lorsqu’une vérification est refusée.
 - [x] Clarifier que le dossier reste en attente tant qu’aucune décision administrative n’est enregistrée, puis couvrir cet état par test.
+- [x] Diagnostiquer pourquoi un selfie validé et le statut vérifié ne se reflètent pas immédiatement dans le profil.
+- [x] Mettre à jour le selfie validé comme photo de profil et afficher le badge vérifié après approbation.
+- [x] Actualiser les profils et listes concernés après une décision de validation.
+- [x] Tester la transition complète en attente vers profil vérifié avec selfie visible.
+- [x] Actualiser automatiquement les statuts de profil et de vérification après une décision administrative.
+- [x] Diagnostiquer de manière fiable l’état réel du profil et de la vérification soumis : le dossier reste en attente tant qu’aucune décision administrative n’est enregistrée.
+- [x] Ajouter un test de bout en bout pending → approved vérifiant statut, selfie de profil et badge.
+- [x] Actualiser de façon ciblée les vues de profil et d’annonce après une décision administrative.
+- [x] Ajouter une preuve complète de transition pending vers approved avec statut et selfie appliqués au profil.
+- [x] Déclencher une actualisation ciblée des profils concernés après une décision administrative au lieu de dépendre uniquement du polling.
+- [x] Ajouter un test routeur complet de revue administrative qui vérifie le profil persistant mis à jour avec selfie et badge.
+- [x] Renforcer l’actualisation du membre et des profils publics après décision administrative, puis en apporter une preuve fonctionnelle.
+- [x] Ajouter un test d’intégration de la mise à jour persistante du profil par la revue administrative.
+- [x] Ajouter une preuve d’intégration complète reliant la revue administrative à la persistance réelle du profil vérifié.
+- [x] Corriger les profils bloqués en attente sans dossier de vérification correspondant et guider leur nouvelle soumission.
+- [x] Ne pas afficher d’accès Administration dans la navigation publique.
+- [x] Ajouter une analyse IA du document, du selfie et de la cohérence profil, avec décision automatisée encadrée.
+- [x] Enregistrer les motifs et le niveau de confiance de la décision IA.
+- [x] Appliquer le résultat de vérification et notifier immédiatement le membre concerné.
+- [x] Tester l’analyse IA, les décisions automatiques et la mise à jour du profil vérifié.

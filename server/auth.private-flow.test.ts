@@ -3,7 +3,7 @@ import { COOKIE_NAME } from "../shared/const";
 
 const { dbMock } = vi.hoisted(() => ({
   dbMock: {
-    getUserByOpenId: vi.fn(), upsertUser: vi.fn(), getProfile: vi.fn(), getLatestVerification: vi.fn(), getConversations: vi.fn(), listNotifications: vi.fn(),
+    getUserByOpenId: vi.fn(), upsertUser: vi.fn(), getProfile: vi.fn(), getConsistentProfile: vi.fn(), getLatestVerification: vi.fn(), getConversations: vi.fn(), listNotifications: vi.fn(),
   },
 }));
 
@@ -21,6 +21,7 @@ describe("parcours privé après connexion téléphone", () => {
     vi.clearAllMocks();
     dbMock.getUserByOpenId.mockResolvedValue(member);
     dbMock.getProfile.mockResolvedValue({ userId: 42, verificationStatus: "pending" });
+    dbMock.getConsistentProfile.mockResolvedValue({ userId: 42, verificationStatus: "pending" });
     dbMock.getLatestVerification.mockResolvedValue({ userId: 42, status: "pending" });
     dbMock.getConversations.mockResolvedValue([]);
     dbMock.listNotifications.mockResolvedValue([]);

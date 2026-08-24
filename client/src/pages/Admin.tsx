@@ -12,7 +12,7 @@ export default function Admin() {
   const pending = trpc.marketplace.admin.pendingVerifications.useQuery();
   const listings = trpc.marketplace.admin.listings.useQuery();
   const utils = trpc.useUtils();
-  const review = trpc.marketplace.admin.reviewVerification.useMutation({ onSuccess: () => { utils.marketplace.admin.overview.invalidate(); utils.marketplace.admin.pendingVerifications.invalidate(); } });
+  const review = trpc.marketplace.admin.reviewVerification.useMutation({ onSuccess: () => { utils.marketplace.admin.overview.invalidate(); utils.marketplace.admin.pendingVerifications.invalidate(); utils.marketplace.profile.mine.invalidate(); utils.marketplace.verification.mine.invalidate(); utils.marketplace.listings.detail.invalidate(); } });
   const moderate = trpc.marketplace.listings.moderate.useMutation({ onSuccess: () => { utils.marketplace.admin.listings.invalidate(); utils.marketplace.admin.overview.invalidate(); } });
   const [confirmedDossiers, setConfirmedDossiers] = useState<Record<number, boolean>>({});
   const [rejectionNotes, setRejectionNotes] = useState<Record<number, string>>({});

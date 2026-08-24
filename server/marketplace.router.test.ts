@@ -1,20 +1,26 @@
 import { describe, expect, it, vi } from "vitest";
+import { resolveVerificationDecision } from "../shared/marketplace";
 
-const { dbMock } = vi.hoisted(() => ({
+const { dbMock, analyzeVerificationWithAiMock } = vi.hoisted(() => ({
   dbMock: {
     getProfile: vi.fn(),
     getLatestVerification: vi.fn(),
+    getVerificationDossier: vi.fn(),
+    saveAiVerificationReview: vi.fn(),
+    applyAutomatedVerificationDecision: vi.fn(),
     findOrCreateConversation: vi.fn(),
-  createMessage: vi.fn(),
-  createNotification: vi.fn(),
-  reviewVerification: vi.fn(),
-  moderateListing: vi.fn(),
+    createMessage: vi.fn(),
+    createNotification: vi.fn(),
+    reviewVerification: vi.fn(),
+    moderateListing: vi.fn(),
   },
+  analyzeVerificationWithAiMock: vi.fn(),
 }));
 
 vi.mock("./db", () => dbMock);
 vi.mock("./_core/notification", () => ({ notifyOwner: vi.fn() }));
 vi.mock("./storage", () => ({ storagePut: vi.fn() }));
+vi.mock("./verificationAi", () => ({ analyzeVerificationWithAi: analyzeVerificationWithAiMock }));
 
 import { marketplaceRouter } from "./routers/marketplace";
 
@@ -46,7 +52,7 @@ describe("flux métier marketplace", () => {
   });
 
   it("notifie la décision de vérification après revue administrative", async () => {
-    dbMock.reviewVerification.mockResolvedValueOnce({ userId: 22 });
+    dbMock.reviewVerification.mockResolvedValueOnce({ userId: 22, selfieKey: "verifications/22/selfie.jpg" });
     await caller("admin").admin.reviewVerification({ verificationId: 8, decision: "approved", note: "", confirmedConsistent: true });
     expect(dbMock.reviewVerification).toHaveBeenCalledWith(8, 11, "approved", "");
     expect(dbMock.createNotification).toHaveBeenCalledWith({ userId: 22, type: "verification", title: "Profil vérifié", body: "Votre badge vérifié est désormais actif." });
@@ -68,5 +74,29 @@ describe("flux métier marketplace", () => {
   it("transmet le motif de refus au membre pour sa nouvelle soumission", async () => {
     dbMock.getLatestVerification.mockResolvedValueOnce({ id: 8, documentType: "cni", status: "rejected", adminNote: "Le document est illisible, veuillez reprendre une photo nette.", createdAt: new Date() });
     await expect(caller().verification.mine()).resolves.toMatchObject({ status: "rejected", adminNote: "Le document est illisible, veuillez reprendre une photo nette." });
+  });
+
+  it("propage une approbation administrative au profil persistant avec le selfie validé", async () => {
+    const persistedProfile = { userId: 22, verificationStatus: "pending", profilePhotoKey: null as string | null };
+    dbMock.reviewVerification.mockImplementationOnce(async () => {
+      Object.assign(persistedProfile, resolveVerificationDecision("approved", "verifications/22/live-selfie.jpg", "").profile);
+      return { userId: 22, selfieKey: "verifications/22/live-selfie.jpg" };
+    });
+    dbMock.getProfile.mockResolvedValueOnce(persistedProfile);
+    await caller("admin").admin.reviewVerification({ verificationId: 8, decision: "approved", note: "", confirmedConsistent: true });
+    expect(await dbMock.getProfile(22)).toEqual({ userId: 22, verificationStatus: "verified", profilePhotoKey: "verifications/22/live-selfie.jpg" });
+  });
+
+  it("applique une décision automatique sûre, enregistre la revue et alerte le membre", async () => {
+    const review = { recommendation: "approve" as const, confidence: 92, documentReadable: true, selfieFaceVisible: true, profileInformationConsistent: true, reasons: ["Document lisible et informations cohérentes."] };
+    dbMock.getLatestVerification.mockResolvedValueOnce({ id: 18, status: "pending" });
+    dbMock.getVerificationDossier.mockResolvedValueOnce({ id: 18, userId: 11, documentType: "cni", documentKey: "verifications/11/document.jpg", selfieKey: "verifications/11/selfie.jpg", firstName: "Amadou", lastName: "Diallo", city: "Dakar" });
+    analyzeVerificationWithAiMock.mockResolvedValueOnce(review);
+    dbMock.applyAutomatedVerificationDecision.mockResolvedValueOnce({ userId: 11, selfieKey: "verifications/11/selfie.jpg" });
+
+    await expect(caller().verification.analyzeMine()).resolves.toMatchObject({ id: 18, status: "approved", aiStatus: "decided" });
+    expect(dbMock.saveAiVerificationReview).toHaveBeenCalledWith(18, review);
+    expect(dbMock.applyAutomatedVerificationDecision).toHaveBeenCalledWith(18, "approved", "Vérification automatisée : dossier cohérent.");
+    expect(dbMock.createNotification).toHaveBeenCalledWith({ userId: 11, type: "verification", title: "Profil vérifié", body: "Votre badge vérifié est désormais actif." });
   });
 });

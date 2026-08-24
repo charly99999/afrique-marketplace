@@ -35,6 +35,8 @@ export const verifications = mysqlTable("verifications", {
   selfieKey: varchar("selfieKey", { length: 1024 }).notNull(),
   status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
   adminNote: text("adminNote"),
+  aiReview: text("aiReview"),
+  aiReviewedAt: timestamp("aiReviewedAt"),
   reviewerId: int("reviewerId").references(() => users.id, { onDelete: "set null" }),
   reviewedAt: timestamp("reviewedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
