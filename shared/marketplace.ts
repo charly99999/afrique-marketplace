@@ -22,6 +22,15 @@ export const registrationSchema = z.object({
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères").max(128),
 });
 
+export const profileDetailsSchema = z.object({
+  bio: z.string().trim().max(500, "La présentation ne peut pas dépasser 500 caractères"),
+  businessCategory: z.string().trim().max(100, "L’activité ne peut pas dépasser 100 caractères"),
+  businessHours: z.string().trim().max(120, "Les horaires ne peuvent pas dépasser 120 caractères"),
+  address: z.string().trim().max(180, "L’adresse ne peut pas dépasser 180 caractères"),
+  website: z.union([z.literal(""), z.string().trim().url("Indiquez une adresse web complète, par exemple https://exemple.com").max(320)]),
+  contactEmail: z.union([z.literal(""), z.string().trim().email("Indiquez une adresse e-mail valide").max(320)]),
+});
+
 export function normalizePhone(phone: string) {
   return phone.replace(/[\s().-]/g, "");
 }

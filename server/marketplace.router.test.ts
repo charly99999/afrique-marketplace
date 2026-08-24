@@ -4,6 +4,8 @@ import { resolveVerificationDecision } from "../shared/marketplace";
 const { dbMock, analyzeVerificationWithAiMock } = vi.hoisted(() => ({
   dbMock: {
     getProfile: vi.fn(),
+    updateProfileDetails: vi.fn(),
+    getListingsForUser: vi.fn(),
     getLatestVerification: vi.fn(),
     getVerificationDossier: vi.fn(),
     saveAiVerificationReview: vi.fn(),
@@ -36,6 +38,22 @@ describe("flux métier marketplace", () => {
   it("empêche effectivement un profil non vérifié de publier", async () => {
     dbMock.getProfile.mockResolvedValueOnce({ verificationStatus: "pending" });
     await expect(caller().listings.create({ title: "Téléphone récent à vendre", description: "Appareil en bon état, avec chargeur et boîte d’origine.", category: "telephones", city: "Dakar", price: 250000, currency: "XOF", condition: "bon_etat", mediaData: [] })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("enregistre les informations professionnelles facultatives du membre connecté", async () => {
+    const details = { bio: "Conseiller en immobilier et créateur de solutions locales.", businessCategory: "Immobilier", businessHours: "Lun–Sam · 08h–18h", address: "Cocody, Abidjan", website: "https://afrique-exemple.com", contactEmail: "contact@afrique-exemple.com" };
+    dbMock.getProfile.mockResolvedValueOnce({ userId: 11 });
+    dbMock.updateProfileDetails.mockResolvedValueOnce({ userId: 11, ...details });
+
+    await expect(caller().profile.updateDetails(details)).resolves.toMatchObject({ userId: 11, businessCategory: "Immobilier" });
+    expect(dbMock.updateProfileDetails).toHaveBeenCalledWith(11, details);
+  });
+
+  it("récupère les annonces du membre connecté pour sa fiche profil", async () => {
+    dbMock.getListingsForUser.mockResolvedValueOnce([{ id: 31, userId: 11, title: "Appartement à louer", status: "published" }]);
+
+    await expect(caller().listings.mine()).resolves.toEqual([{ id: 31, userId: 11, title: "Appartement à louer", status: "published" }]);
+    expect(dbMock.getListingsForUser).toHaveBeenCalledWith(11);
   });
 
   it("crée un message et une alerte pour le destinataire", async () => {

@@ -90,3 +90,9 @@
 - [x] Enregistrer les motifs et le niveau de confiance de la décision IA.
 - [x] Appliquer le résultat de vérification et notifier immédiatement le membre concerné.
 - [x] Tester l’analyse IA, les décisions automatiques et la mise à jour du profil vérifié.
+- [x] Recomposer le profil membre et professionnel avec couverture, identité, activité, description, onglets et coordonnées selon des règles de visibilité claires.
+- [x] Concevoir un affichage mobile premium des informations publiques, du contact vérifié et des annonces du membre.
+- [x] Vérifier sur web et Android le nouveau parcours de consultation du profil.
+- [x] Documenter les limites réalistes de stockage et d’hébergement pour la montée en charge de la plateforme.
+- [x] Ajouter une requête sécurisée pour les annonces publiées du membre et les afficher dans son profil avec états vide, chargement et erreur.
+- [x] Rédiger et livrer une note de montée en charge exposant les limites actuelles, le stockage, les critères de renforcement et le canal officiel pour les coûts.

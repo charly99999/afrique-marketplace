@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { randomBytes, randomUUID, scryptSync } from "crypto";
 import { z } from "zod";
-import { canPublishWithVerification, MARKETPLACE_CATEGORIES, listingCreateSchema, moderationStatuses, registrationSchema, resolveVerificationDecision, visibleSellerPhone } from "../../shared/marketplace";
+import { canPublishWithVerification, MARKETPLACE_CATEGORIES, listingCreateSchema, moderationStatuses, profileDetailsSchema, registrationSchema, resolveVerificationDecision, visibleSellerPhone } from "../../shared/marketplace";
 import * as db from "../db";
 import { notifyOwner } from "../_core/notification";
 import { storagePut } from "../storage";
@@ -92,6 +92,11 @@ export const marketplaceRouter = router({
       const file = await putPrivateFile(`profiles/${ctx.user.id}/cover`, input.dataUrl);
       return db.setProfileMedia(ctx.user.id, "coverPhotoKey", file.key);
     }),
+    updateDetails: protectedProcedure.input(profileDetailsSchema).mutation(async ({ ctx, input }) => {
+      const profile = await db.getProfile(ctx.user.id);
+      if (!profile) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Complétez d’abord votre inscription" });
+      return db.updateProfileDetails(ctx.user.id, input);
+    }),
   }),
   verification: router({
     mine: protectedProcedure.query(async ({ ctx }) => {
@@ -129,6 +134,7 @@ export const marketplaceRouter = router({
   }),
   listings: router({
     search: publicProcedure.input(z.object({ category: z.string().optional(), city: z.string().optional(), query: z.string().optional(), condition: z.string().optional() }).optional()).query(({ input }) => db.searchListings(input ?? {})),
+    mine: protectedProcedure.query(({ ctx }) => db.getListingsForUser(ctx.user.id)),
     detail: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
       const listing = await db.getListing(input.id);
       if (!listing || listing.status !== "published") throw new TRPCError({ code: "NOT_FOUND", message: "Annonce introuvable" });

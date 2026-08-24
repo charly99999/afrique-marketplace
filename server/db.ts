@@ -121,6 +121,20 @@ export async function setProfileMedia(userId: number, field: "profilePhotoKey" |
   return getProfile(userId);
 }
 
+export async function updateProfileDetails(userId: number, details: { bio: string; businessCategory: string; businessHours: string; address: string; website: string; contactEmail: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(profiles).set({
+    bio: details.bio || null,
+    businessCategory: details.businessCategory || null,
+    businessHours: details.businessHours || null,
+    address: details.address || null,
+    website: details.website || null,
+    contactEmail: details.contactEmail || null,
+  }).where(eq(profiles.userId, userId));
+  return getProfile(userId);
+}
+
 export async function createVerification(payload: typeof verifications.$inferInsert) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -152,6 +166,12 @@ export async function searchListings(filters: { category?: string; city?: string
   if (filters.condition) conditions.push(eq(listings.condition, filters.condition as "neuf" | "comme_neuf" | "bon_etat" | "a_reparer"));
   if (filters.query) conditions.push(sql`(${listings.title} like ${`%${filters.query}%`} or ${listings.description} like ${`%${filters.query}%`})`);
   return db.select().from(listings).where(and(...conditions)).orderBy(desc(listings.createdAt)).limit(60);
+}
+
+export async function getListingsForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(listings).where(and(eq(listings.userId, userId), eq(listings.status, "published"))).orderBy(desc(listings.updatedAt)).limit(30);
 }
 
 export async function getListing(id: number) {
