@@ -144,4 +144,5 @@
 - [ ] Raccorder les écrans Profil, Publier, Messages, Suivis, Vérification et Administration à leurs adaptateurs Supabase, puis exécuter les contrôles d’accès à deux comptes.
 - [x] Abandonner la configuration de publication Cloudflare Pages à la demande explicite du propriétaire, sans supprimer les artefacts portables déjà préparés.
 - [x] Enregistrer `GOOGLE_GENERATIVE_AI_API_KEY` comme secret chiffré Supabase et déployer `verify-identity` avec vérification JWT active.
+- [x] Créer le projet Vercel relié à GitHub, ajouter le build portable et vérifier qu’un déploiement HTTPS répond correctement.
 - [ ] Créer le projet Vercel relié à GitHub, définir les variables publiques Supabase pour Preview et Production, puis déployer le build Vite portable.
