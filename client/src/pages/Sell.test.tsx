@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
+vi.mock("@/lib/backendMode", () => ({ isSupabaseMode: false }));
+
 const { createMock } = vi.hoisted(() => ({ createMock: vi.fn() }));
 
 vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ isAuthenticated: true }) }));
