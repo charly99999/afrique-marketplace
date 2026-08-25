@@ -35,6 +35,15 @@ export type PortableProfile = {
   verificationStatus: "required" | "pending" | "verified" | "rejected";
 };
 
+export type PortableSeller = {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  city: string;
+  businessCategory: string;
+  profilePhotoKey: string | null;
+};
+
 function normalizeListing(row: Record<string, unknown>): PortableListing {
   return {
     id: String(row.id),
@@ -133,6 +142,29 @@ export async function listMyPortableListings() {
   const { data, error } = await client.from("am_listings").select("*").eq("owner_id", user.id).order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(item => normalizeListing(item as Record<string, unknown>));
+}
+
+export async function listMyPortableFollows() {
+  const client = requireSupabaseClient();
+  const { data: follows, error: followsError } = await client.from("am_seller_follows").select("seller_id").order("created_at", { ascending: false });
+  if (followsError) throw followsError;
+  const sellerIds = (follows ?? []).map(item => String(item.seller_id));
+  if (!sellerIds.length) return [];
+  const { data: sellers, error: sellersError } = await client.from("am_public_seller_profiles").select("id, first_name, last_name, city, business_category, profile_photo_path").in("id", sellerIds);
+  if (sellersError) throw sellersError;
+  const sellersById = new Map((sellers ?? []).map(item => [String(item.id), item]));
+  return sellerIds.flatMap(userId => {
+    const seller = sellersById.get(userId);
+    if (!seller) return [];
+    return [{
+      userId,
+      firstName: String(seller.first_name),
+      lastName: String(seller.last_name),
+      city: String(seller.city),
+      businessCategory: String(seller.business_category ?? ""),
+      profilePhotoKey: seller.profile_photo_path ? String(seller.profile_photo_path) : null,
+    } satisfies PortableSeller];
+  });
 }
 
 export function portableMediaUrl(path: string | null | undefined) {
