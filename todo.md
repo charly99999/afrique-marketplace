@@ -146,3 +146,4 @@
 - [x] Enregistrer `GOOGLE_GENERATIVE_AI_API_KEY` comme secret chiffré Supabase et déployer `verify-identity` avec vérification JWT active.
 - [x] Créer le projet Vercel relié à GitHub, ajouter le build portable et vérifier qu’un déploiement HTTPS répond correctement.
 - [ ] Définir les variables publiques Supabase pour Preview et Production Vercel, puis revalider le build Vite portable avec le catalogue en mode Supabase.
+- [x] Retirer le script d’analytique Manus non configuré du build portable Vercel, puis revalider le journal de compilation distant.
