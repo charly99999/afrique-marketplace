@@ -180,6 +180,50 @@ export async function createPortableListing(payload: Omit<PortableListing, "id" 
   return normalizeListing(data as Record<string, unknown>);
 }
 
+async function portableFileFromDataUrl(dataUrl: string, fileName: string) {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  const type = blob.type || "application/octet-stream";
+  return new File([blob], fileName, { type });
+}
+
+export async function createPortableListingWithMedia(
+  payload: Omit<PortableListing, "id" | "userId" | "status" | "createdAt" | "updatedAt" | "media">,
+  preparedMedia: Array<{ dataUrl: string; fileName: string }>,
+) {
+  if (preparedMedia.length > 4) throw new Error("Ajoutez au maximum quatre médias.");
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error("Connexion requise.");
+
+  const media = await Promise.all(preparedMedia.map(async ({ dataUrl, fileName }) => {
+    const file = await portableFileFromDataUrl(dataUrl, fileName);
+    const kind = file.type.startsWith("video/") ? "video" : "image";
+    if (!file.type.startsWith("image/") && file.type !== "video/mp4") throw new Error("Utilisez une image ou une vidéo MP4.");
+    if (file.size > 5 * 1024 * 1024) throw new Error("Un média dépasse la limite autorisée de 5 Mo.");
+    const extension = file.name.split(".").pop()?.replace(/[^a-z0-9]/gi, "") || (kind === "video" ? "mp4" : "jpg");
+    const path = `${user.id}/listings/${crypto.randomUUID()}.${extension}`;
+    const { error } = await client.storage.from("marketplace-media").upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw error;
+    return { key: path, kind } as { key: string; kind: "image" | "video" };
+  }));
+
+  const { data, error } = await client.from("am_listings").insert({
+    owner_id: user.id,
+    title: payload.title,
+    description: payload.description,
+    category_id: payload.category,
+    city: payload.city,
+    price: payload.price,
+    currency: payload.currency,
+    item_condition: payload.condition,
+    media,
+  }).select().single();
+  if (error) throw error;
+  return normalizeListing(data as Record<string, unknown>);
+}
+
 export async function uploadPortableMedia(path: string, file: File, privateIdentity = false) {
   const bucket = privateIdentity ? "marketplace-identity" : "marketplace-media";
   const { error } = await requireSupabaseClient().storage.from(bucket).upload(path, file, { upsert: false, contentType: file.type });
