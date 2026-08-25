@@ -142,6 +142,9 @@
 - [x] Supprimer les requêtes d’authentification tRPC résiduelles du shell lorsque le mode Supabase est activé, puis revalider le catalogue compilé.
 - [ ] Déployer `verify-identity` seulement après configuration sécurisée de la clé IA externe dans Supabase, puis tester un dossier réel avec revue humaine de secours.
 - [ ] Exécuter les contrôles d’accès Supabase avec deux comptes réels, dont un compte administrateur, avant la bascule complète.
+- [ ] Finaliser réellement la bascule complète Supabase en documentant les contrôles RLS avec deux comptes autorisés.
+- [ ] Tester verify-identity sur un dossier d’identité consenti et documenter le repli vers la revue humaine.
+- [ ] Ne marquer la migration complète comme terminée qu’après validation RLS et vérification d’identité réelle.
 - [x] Abandonner la configuration de publication Cloudflare Pages à la demande explicite du propriétaire, sans supprimer les artefacts portables déjà préparés.
 - [x] Enregistrer `GOOGLE_GENERATIVE_AI_API_KEY` comme secret chiffré Supabase et déployer `verify-identity` avec vérification JWT active.
 - [x] Créer le projet Vercel relié à GitHub, ajouter le build portable et vérifier qu’un déploiement HTTPS répond correctement.
@@ -163,10 +166,14 @@
 - [x] Vérifier sur Vercel les réponses robots.txt et sitemap.xml, puis documenter la soumission du domaine dans Google Search Console.
 - [x] Publier le fichier de validation Google, vérifier la propriété Search Console et soumettre le sitemap public de production.
 - [x] Ajouter l’intégration Capacitor Android avec un identifiant d’application stable et une configuration reproductible.
-- [ ] Configurer l’identité visuelle Android, les permissions caméra/fichiers et les liens téléphoniques sans exposer les preuves privées.
+- [x] Configurer l’identité visuelle Android, les permissions caméra/fichiers et les liens téléphoniques sans exposer les preuves privées.
 - [ ] Compiler et vérifier un APK de test ainsi que les parcours Android sensibles avec le backend Supabase en ligne.
 - [x] Documenter la génération APK/AAB, la signature privée et les limites de fonctionnement hors connexion.
 - [x] Préparer une variante Android release reliée à Supabase, distincte de l’APK debug, avec version et identifiant de production.
 - [x] Configurer une signature Android release privée hors GitHub et produire un APK/AAB de distribution.
 - [x] Vérifier les conditions de publication Google Play et documenter que la mise en ligne nécessite le compte développeur du propriétaire.
+
+- [x] Remplacer l’icône générique Capacitor de l’application et du bureau Android par le logo Afrique Marketplace.
+- [x] Vérifier le manifeste PWA, les icônes adaptatives Android et l’écran de démarrage après remplacement du logo.
+- [ ] Auditer les erreurs bloquantes visibles dans les parcours Android et web avant de livrer la nouvelle release.
 
