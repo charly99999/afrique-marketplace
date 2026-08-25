@@ -162,3 +162,7 @@
 - [x] Publier un robots.txt, un sitemap XML des routes publiques et des métadonnées de base SEO sans inclure de données privées.
 - [x] Vérifier sur Vercel les réponses robots.txt et sitemap.xml, puis documenter la soumission du domaine dans Google Search Console.
 - [x] Publier le fichier de validation Google, vérifier la propriété Search Console et soumettre le sitemap public de production.
+- [x] Ajouter l’intégration Capacitor Android avec un identifiant d’application stable et une configuration reproductible.
+- [ ] Configurer l’identité visuelle Android, les permissions caméra/fichiers et les liens téléphoniques sans exposer les preuves privées.
+- [ ] Compiler et vérifier un APK de test ainsi que les parcours Android sensibles avec le backend Supabase en ligne.
+- [x] Documenter la génération APK/AAB, la signature privée et les limites de fonctionnement hors connexion.
