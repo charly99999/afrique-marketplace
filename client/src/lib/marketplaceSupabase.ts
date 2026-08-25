@@ -263,6 +263,58 @@ export async function uploadPortableMedia(path: string, file: File, privateIdent
   return path;
 }
 
+export type PortableVerification = {
+  id: string;
+  status: "pending" | "approved" | "rejected";
+  adminNote: string | null;
+  aiReviewedAt: string | null;
+};
+
+function normalizeVerification(row: Record<string, unknown>): PortableVerification {
+  return {
+    id: String(row.id),
+    status: row.status as PortableVerification["status"],
+    adminNote: row.admin_note ? String(row.admin_note) : null,
+    aiReviewedAt: row.ai_reviewed_at ? String(row.ai_reviewed_at) : null,
+  };
+}
+
+export async function getMyPortableVerification() {
+  const client = requireSupabaseClient();
+  const { data, error } = await client.from("am_identity_verifications").select("id, status, admin_note, ai_reviewed_at, created_at").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (error) throw error;
+  return data ? normalizeVerification(data as Record<string, unknown>) : null;
+}
+
+export async function submitPortableVerification(payload: { documentType: "cni" | "passeport" | "permis" | "carte_scolaire"; documentData: string; selfieData: string }) {
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error("Connexion requise.");
+  const document = await portableFileFromDataUrl(payload.documentData, "document.jpg");
+  const selfie = await portableFileFromDataUrl(payload.selfieData, "selfie.jpg");
+  if (!document.type.startsWith("image/") || !selfie.type.startsWith("image/")) throw new Error("Le document et le selfie doivent être des images.");
+  const documentPath = `${user.id}/identity/document-${crypto.randomUUID()}.jpg`;
+  const selfiePath = `${user.id}/identity/selfie-${crypto.randomUUID()}.jpg`;
+  const upload = async (path: string, file: File) => {
+    const { error } = await client.storage.from("marketplace-identity").upload(path, file, { upsert: false, contentType: file.type });
+    if (error) throw error;
+  };
+  await Promise.all([upload(documentPath, document), upload(selfiePath, selfie)]);
+  const { data, error } = await client.from("am_identity_verifications").insert({
+    user_id: user.id,
+    document_type: payload.documentType,
+    document_path: documentPath,
+    selfie_path: selfiePath,
+  }).select("id, status, admin_note, ai_reviewed_at").single();
+  if (error) throw error;
+  const verification = normalizeVerification(data as Record<string, unknown>);
+  const { data: result, error: invokeError } = await client.functions.invoke("verify-identity", { body: { verificationId: verification.id } });
+  if (invokeError) return { verification, analysisError: "Votre dossier est enregistré et reste en attente d’examen sécurisé." };
+  const status = result?.status as PortableVerification["status"] | undefined;
+  return { verification: { ...verification, status: status ?? verification.status, aiReviewedAt: new Date().toISOString() }, analysisError: null };
+}
+
 export async function listPortableConversations() {
   const { data, error } = await requireSupabaseClient().from("am_conversations").select("*").order("updated_at", { ascending: false });
   if (error) throw error;
