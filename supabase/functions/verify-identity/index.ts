@@ -18,9 +18,12 @@ Deno.serve(async (request) => {
   const { data: { user } } = await admin.auth.getUser(token);
   if (!user) return Response.json({ error: "Session invalide." }, { status: 401, headers: corsHeaders });
 
-  const { verificationId } = await request.json();
+  const { verificationId } = await request.json().catch(() => ({}));
+  if (typeof verificationId !== "string" || !verificationId) return Response.json({ error: "Identifiant de dossier invalide." }, { status: 400, headers: corsHeaders });
   const { data: verification } = await admin.from("am_identity_verifications").select("id,user_id,document_type,document_path,selfie_path,status").eq("id", verificationId).eq("user_id", user.id).eq("status", "pending").single();
   if (!verification) return Response.json({ error: "Dossier introuvable ou déjà traité." }, { status: 404, headers: corsHeaders });
+  const ownedPrefix = `${user.id}/`;
+  if (!verification.document_path.startsWith(ownedPrefix) || !verification.selfie_path.startsWith(ownedPrefix)) return Response.json({ error: "Chemins de preuve invalides." }, { status: 403, headers: corsHeaders });
 
   // Le fournisseur IA est explicitement remplacé par une clé externe. Cette
   // fonction ne déclare jamais l’identité d’une personne : elle n’automatise
@@ -42,7 +45,12 @@ Deno.serve(async (request) => {
   });
   if (!modelResponse.ok) return Response.json({ error: "Analyse indisponible, dossier conservé en attente." }, { status: 503, headers: corsHeaders });
   const payload = await modelResponse.json();
-  const review = JSON.parse(payload.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}");
+  let review: { recommendation?: string; confidence?: number; documentReadable?: boolean; selfieFaceVisible?: boolean; profileInformationConsistent?: boolean; reasons?: string[] };
+  try {
+    review = JSON.parse(payload.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}");
+  } catch {
+    return Response.json({ error: "Réponse d’analyse invalide, dossier conservé en attente." }, { status: 503, headers: corsHeaders });
+  }
   const approved = review.recommendation === "approve" && review.confidence >= 85 && review.documentReadable && review.selfieFaceVisible && review.profileInformationConsistent;
   const rejected = review.recommendation === "reject" && (!review.documentReadable || !review.selfieFaceVisible);
   const status = approved ? "approved" : rejected ? "rejected" : "pending";

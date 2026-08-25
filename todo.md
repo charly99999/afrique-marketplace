@@ -133,7 +133,13 @@
 - [x] Préparer le client Supabase, les variables d’environnement et les couches d’accès portables sans exposer de secret.
 - [x] Écrire les migrations Supabase, politiques RLS, règles de stockage et plan de reprise des données existantes.
 - [x] Préparer l’export GitHub, la documentation d’installation, les contrôles de build et les étapes Cloudflare Pages.
-- [ ] Finaliser la migration après choix explicite du projet Supabase cible et des variables de production.
-- [ ] Vérifier les politiques RLS et l’Edge Function de vérification avant toute application sur le projet Supabase cible.
+- [ ] Finaliser la migration complète après raccordement des écrans encore legacy et configuration effective de Cloudflare Pages en production.
+- [x] Vérifier les politiques RLS et l’Edge Function de vérification avant toute application sur le projet Supabase cible.
 - [x] Créer des adaptateurs Supabase pour l’authentification, les profils, annonces, conversations et notifications.
-- [ ] Ajouter un mode de bascule documenté entre le backend actuel et Supabase, puis valider au moins un parcours complet sur la couche portable.
+- [x] Ajouter un mode de bascule documenté entre le backend actuel et Supabase, puis valider au moins un parcours complet sur la couche portable.
+- [x] Vérifier le coût et obtenir la confirmation requise avant de créer le projet Supabase dédié.
+- [x] Créer le projet Supabase dédié Afrique Marketplace, appliquer le schéma sécurisé et vérifier les protections initiales.
+- [x] Supprimer les requêtes d’authentification tRPC résiduelles du shell lorsque le mode Supabase est activé, puis revalider le catalogue compilé.
+- [ ] Déployer `verify-identity` seulement après configuration sécurisée de la clé IA externe dans Supabase, puis tester un dossier réel avec revue humaine de secours.
+- [ ] Raccorder les écrans Profil, Publier, Messages, Suivis, Vérification et Administration à leurs adaptateurs Supabase, puis exécuter les contrôles d’accès à deux comptes.
+- [ ] Configurer les variables Supabase et le mode portable dans Cloudflare Pages pour Preview et Production, puis revalider les parcours exposés.

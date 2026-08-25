@@ -3,6 +3,7 @@
 -- tables déjà présentes dans le projet Supabase "Afrique-business".
 
 create extension if not exists pgcrypto;
+create schema if not exists am_private;
 
 create table if not exists public.am_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -142,28 +143,28 @@ create table if not exists public.am_identity_verifications (
 create index if not exists am_identity_verifications_user_idx on public.am_identity_verifications(user_id, created_at desc);
 create index if not exists am_identity_verifications_status_idx on public.am_identity_verifications(status, created_at);
 
-create or replace function public.am_set_updated_at() returns trigger language plpgsql as $$
+create or replace function public.am_set_updated_at() returns trigger language plpgsql set search_path = '' as $$
 begin new.updated_at = now(); return new; end;
 $$;
 
-create or replace function public.am_is_admin() returns boolean language sql stable security definer set search_path = public as $$
+create or replace function am_private.am_is_admin() returns boolean language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.am_profiles where id = auth.uid() and role = 'admin');
 $$;
 
-create or replace function public.am_is_verified(uuid) returns boolean language sql stable security definer set search_path = public as $$
+create or replace function am_private.am_is_verified(uuid) returns boolean language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.am_profiles where id = $1 and verification_status = 'verified');
 $$;
 
-create or replace function public.am_prevent_profile_escalation() returns trigger language plpgsql security definer set search_path = public as $$
+create or replace function public.am_prevent_profile_escalation() returns trigger language plpgsql security definer set search_path = '' as $$
 begin
-  if old.role is distinct from new.role and not public.am_is_admin() then raise exception 'Role modification forbidden'; end if;
-  if old.verification_status is distinct from new.verification_status and not public.am_is_admin() then raise exception 'Verification modification forbidden'; end if;
-  if old.profile_photo_path is distinct from new.profile_photo_path and not public.am_is_admin() then raise exception 'Profile photo is controlled by verification'; end if;
+  if old.role is distinct from new.role and not am_private.am_is_admin() then raise exception 'Role modification forbidden'; end if;
+  if old.verification_status is distinct from new.verification_status and not am_private.am_is_admin() then raise exception 'Verification modification forbidden'; end if;
+  if old.profile_photo_path is distinct from new.profile_photo_path and not am_private.am_is_admin() then raise exception 'Profile photo is controlled by verification'; end if;
   return new;
 end;
 $$;
 
-create or replace function public.am_on_auth_user_created() returns trigger language plpgsql security definer set search_path = public as $$
+create or replace function public.am_on_auth_user_created() returns trigger language plpgsql security definer set search_path = '' as $$
 begin
   insert into public.am_profiles (id, first_name, last_name, phone, city)
   values (
@@ -177,7 +178,7 @@ begin
 end;
 $$;
 
-create or replace function public.am_touch_conversation_and_notify() returns trigger language plpgsql security definer set search_path = public as $$
+create or replace function public.am_touch_conversation_and_notify() returns trigger language plpgsql security definer set search_path = '' as $$
 declare recipient uuid; listing_target uuid;
 begin
   select case when buyer_id = new.sender_id then seller_id else buyer_id end, listing_id into recipient, listing_target
@@ -189,7 +190,7 @@ begin
 end;
 $$;
 
-create or replace function public.am_sync_public_seller() returns trigger language plpgsql security definer set search_path = public as $$
+create or replace function public.am_sync_public_seller() returns trigger language plpgsql security definer set search_path = '' as $$
 begin
   if new.verification_status = 'verified' then
     insert into public.am_public_seller_profiles (id, first_name, last_name, phone, city, bio, business_category, business_hours, address, website, contact_email, profile_photo_path, cover_photo_path, updated_at)
@@ -206,7 +207,7 @@ begin
 end;
 $$;
 
-create or replace function public.am_notify_listing_followers() returns trigger language plpgsql security definer set search_path = public as $$
+create or replace function public.am_notify_listing_followers() returns trigger language plpgsql security definer set search_path = '' as $$
 begin
   if new.status = 'published' then
     insert into public.am_notifications (user_id, type, title, body, link_path)
@@ -245,27 +246,28 @@ alter table public.am_seller_follows enable row level security;
 alter table public.am_notifications enable row level security;
 alter table public.am_identity_verifications enable row level security;
 
-create policy "am_profile_self_or_admin_read" on public.am_profiles for select to authenticated using (id = auth.uid() or public.am_is_admin());
-create policy "am_profile_self_update" on public.am_profiles for update using (id = auth.uid() or public.am_is_admin()) with check (id = auth.uid() or public.am_is_admin());
+create policy "am_profile_self_or_admin_read" on public.am_profiles for select to authenticated using (id = auth.uid() or am_private.am_is_admin());
+create policy "am_profile_self_update" on public.am_profiles for update using (id = auth.uid() or am_private.am_is_admin()) with check (id = auth.uid() or am_private.am_is_admin());
 create policy "am_public_seller_verified_read" on public.am_public_seller_profiles for select using (true);
-create policy "am_categories_public_read" on public.am_categories for select using (active or public.am_is_admin());
-create policy "am_categories_admin_write" on public.am_categories for all using (public.am_is_admin()) with check (public.am_is_admin());
+create policy "am_categories_public_read" on public.am_categories for select using (active);
+create policy "am_categories_admin_inactive_read" on public.am_categories for select to authenticated using (am_private.am_is_admin());
+create policy "am_categories_admin_write" on public.am_categories for all to authenticated using (am_private.am_is_admin()) with check (am_private.am_is_admin());
 create policy "am_listings_public_read" on public.am_listings for select using (status = 'published');
-create policy "am_listings_owner_or_admin_read" on public.am_listings for select to authenticated using (owner_id = auth.uid() or public.am_is_admin());
-create policy "am_listings_verified_owner_create" on public.am_listings for insert with check (owner_id = auth.uid() and public.am_is_verified(auth.uid()));
-create policy "am_listings_owner_or_admin_update" on public.am_listings for update using (owner_id = auth.uid() or public.am_is_admin()) with check (owner_id = auth.uid() or public.am_is_admin());
-create policy "am_listings_owner_or_admin_delete" on public.am_listings for delete using (owner_id = auth.uid() or public.am_is_admin());
-create policy "am_conversations_members_read" on public.am_conversations for select using (buyer_id = auth.uid() or seller_id = auth.uid() or public.am_is_admin());
-create policy "am_conversations_buyer_create" on public.am_conversations for insert with check (
+create policy "am_listings_owner_or_admin_read" on public.am_listings for select to authenticated using (owner_id = auth.uid() or am_private.am_is_admin());
+create policy "am_listings_verified_owner_create" on public.am_listings for insert to authenticated with check (owner_id = auth.uid() and am_private.am_is_verified(auth.uid()));
+create policy "am_listings_owner_or_admin_update" on public.am_listings for update to authenticated using (owner_id = auth.uid() or am_private.am_is_admin()) with check (owner_id = auth.uid() or am_private.am_is_admin());
+create policy "am_listings_owner_or_admin_delete" on public.am_listings for delete to authenticated using (owner_id = auth.uid() or am_private.am_is_admin());
+create policy "am_conversations_members_read" on public.am_conversations for select to authenticated using (buyer_id = auth.uid() or seller_id = auth.uid() or am_private.am_is_admin());
+create policy "am_conversations_buyer_create" on public.am_conversations for insert to authenticated with check (
   buyer_id = auth.uid()
   and seller_id <> auth.uid()
-  and public.am_is_verified(seller_id)
+  and am_private.am_is_verified(seller_id)
   and exists (select 1 from public.am_listings l where l.id = listing_id and l.owner_id = seller_id and l.status = 'published')
 );
-create policy "am_messages_members_read" on public.am_messages for select using (exists (select 1 from public.am_conversations c where c.id = conversation_id and (c.buyer_id = auth.uid() or c.seller_id = auth.uid())) or public.am_is_admin());
-create policy "am_messages_members_create" on public.am_messages for insert with check (sender_id = auth.uid() and exists (select 1 from public.am_conversations c where c.id = conversation_id and (c.buyer_id = auth.uid() or c.seller_id = auth.uid())));
+create policy "am_messages_members_read" on public.am_messages for select to authenticated using (exists (select 1 from public.am_conversations c where c.id = conversation_id and (c.buyer_id = auth.uid() or c.seller_id = auth.uid())) or am_private.am_is_admin());
+create policy "am_messages_members_create" on public.am_messages for insert to authenticated with check (sender_id = auth.uid() and exists (select 1 from public.am_conversations c where c.id = conversation_id and (c.buyer_id = auth.uid() or c.seller_id = auth.uid())));
 create policy "am_reviews_public_read" on public.am_reviews for select using (true);
-create policy "am_reviews_participant_create" on public.am_reviews for insert with check (
+create policy "am_reviews_participant_create" on public.am_reviews for insert to authenticated with check (
   from_user_id = auth.uid()
   and exists (
     select 1 from public.am_conversations c
@@ -273,13 +275,17 @@ create policy "am_reviews_participant_create" on public.am_reviews for insert wi
       and ((c.buyer_id = from_user_id and c.seller_id = to_user_id) or (c.seller_id = from_user_id and c.buyer_id = to_user_id))
   )
 );
-create policy "am_follows_self_read" on public.am_seller_follows for select using (follower_id = auth.uid() or public.am_is_admin());
-create policy "am_follows_verified_create" on public.am_seller_follows for insert with check (follower_id = auth.uid() and seller_id <> auth.uid() and public.am_is_verified(seller_id));
-create policy "am_follows_self_delete" on public.am_seller_follows for delete using (follower_id = auth.uid() or public.am_is_admin());
-create policy "am_notifications_self_read" on public.am_notifications for select using (user_id = auth.uid() or public.am_is_admin());
-create policy "am_notifications_self_read_mark" on public.am_notifications for update using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "am_verifications_self_read" on public.am_identity_verifications for select using (user_id = auth.uid() or public.am_is_admin());
-create policy "am_verifications_self_submit" on public.am_identity_verifications for insert with check (user_id = auth.uid());
+create policy "am_follows_self_read" on public.am_seller_follows for select to authenticated using (follower_id = auth.uid() or am_private.am_is_admin());
+create policy "am_follows_verified_create" on public.am_seller_follows for insert to authenticated with check (follower_id = auth.uid() and seller_id <> auth.uid() and am_private.am_is_verified(seller_id));
+create policy "am_follows_self_delete" on public.am_seller_follows for delete to authenticated using (follower_id = auth.uid() or am_private.am_is_admin());
+create policy "am_notifications_self_read" on public.am_notifications for select to authenticated using (user_id = auth.uid() or am_private.am_is_admin());
+create policy "am_notifications_self_read_mark" on public.am_notifications for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "am_verifications_self_read" on public.am_identity_verifications for select to authenticated using (user_id = auth.uid() or am_private.am_is_admin());
+create policy "am_verifications_self_submit" on public.am_identity_verifications for insert to authenticated with check (
+  user_id = (select auth.uid())
+  and document_path like (select auth.uid()::text || '/%')
+  and selfie_path like (select auth.uid()::text || '/%')
+);
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('marketplace-media','marketplace-media',true,5242880,array['image/jpeg','image/png','image/webp','video/mp4'])
@@ -289,21 +295,20 @@ values ('marketplace-identity','marketplace-identity',false,5242880,array['image
 on conflict (id) do update set public = false;
 
 create policy "am_public_media_upload_own_folder" on storage.objects for insert to authenticated with check (bucket_id = 'marketplace-media' and (storage.foldername(name))[1] = auth.uid()::text);
-create policy "am_public_media_update_own_folder" on storage.objects for update to authenticated using (bucket_id = 'marketplace-media' and owner_id = auth.uid()) with check (bucket_id = 'marketplace-media' and owner_id = auth.uid());
-create policy "am_public_media_delete_own_folder" on storage.objects for delete to authenticated using (bucket_id = 'marketplace-media' and owner_id = auth.uid());
+create policy "am_public_media_update_own_folder" on storage.objects for update to authenticated using (bucket_id = 'marketplace-media' and owner_id = auth.uid()::text) with check (bucket_id = 'marketplace-media' and owner_id = auth.uid()::text);
+create policy "am_public_media_delete_own_folder" on storage.objects for delete to authenticated using (bucket_id = 'marketplace-media' and owner_id = auth.uid()::text);
 create policy "am_identity_upload_own_folder" on storage.objects for insert to authenticated with check (bucket_id = 'marketplace-identity' and (storage.foldername(name))[1] = auth.uid()::text);
-create policy "am_identity_read_own_files" on storage.objects for select to authenticated using (bucket_id = 'marketplace-identity' and owner_id = auth.uid());
-create policy "am_identity_delete_own_files" on storage.objects for delete to authenticated using (bucket_id = 'marketplace-identity' and owner_id = auth.uid());
+create policy "am_identity_read_own_files" on storage.objects for select to authenticated using (bucket_id = 'marketplace-identity' and owner_id = auth.uid()::text);
+create policy "am_identity_delete_own_files" on storage.objects for delete to authenticated using (bucket_id = 'marketplace-identity' and owner_id = auth.uid()::text);
 
 insert into public.am_public_seller_profiles (id, first_name, last_name, phone, city, bio, business_category, business_hours, address, website, contact_email, profile_photo_path, cover_photo_path)
 select id, first_name, last_name, phone, city, bio, business_category, business_hours, address, website, contact_email, profile_photo_path, cover_photo_path
 from public.am_profiles where verification_status = 'verified'
 on conflict (id) do update set updated_at = now();
 
-revoke all on function public.am_is_admin() from public, anon;
-revoke all on function public.am_is_verified(uuid) from public, anon;
-grant execute on function public.am_is_admin() to authenticated;
-grant execute on function public.am_is_verified(uuid) to authenticated;
+revoke all on schema am_private from public;
+grant usage on schema am_private to authenticated;
+grant execute on all functions in schema am_private to authenticated;
 revoke all on function public.am_set_updated_at() from public, anon, authenticated;
 revoke all on function public.am_prevent_profile_escalation() from public, anon, authenticated;
 revoke all on function public.am_on_auth_user_created() from public, anon, authenticated;

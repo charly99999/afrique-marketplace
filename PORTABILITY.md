@@ -10,9 +10,9 @@ Les adaptateurs concrets de session, profils, annonces, médias, conversations e
 
 ## État de migration
 
-La production actuelle continue de fonctionner pendant la préparation. Le runtime existant utilise encore tRPC, Express, MySQL, le stockage S3 et l’IA intégrée ; ils doivent être basculés vers les tables `am_*`, Storage et Edge Functions Supabase avant d’utiliser le build Cloudflare en production. Cette séparation évite une coupure de service et conserve toutes les fonctionnalités pendant le transfert.
+Le projet Supabase dédié **Afrique Marketplace** est créé dans l’organisation du propriétaire, en région `eu-west-1`, sous la référence `pnyoanxxifswwwrljqce`. Il est distinct de `Afrique-business`, qui ne doit pas recevoir les tables de cette application. Les migrations `202608250001` à `202608250004` ont été appliquées sur le nouveau projet : elles créent le schéma `am_*`, les buckets `marketplace-media` et `marketplace-identity`, les politiques RLS, les déclencheurs de notifications, les index de clés étrangères et le durcissement des preuves privées.
 
-Le projet Supabase existant `Afrique-business` contient déjà des tables `profiles`, `listings`, `messages`, `notifications` et des données. La migration fournie utilise donc le préfixe `am_` pour éviter toute collision. **Ne pas l’appliquer sans confirmer que ce projet est bien la cible souhaitée.** Son audit actuel remonte aussi un accès `SECURITY DEFINER` exposé, des fonctions sans `search_path` figé et une protection contre les mots de passe compromis désactivée ; ces éléments doivent être corrigés avant toute réutilisation en production.
+Le contrôle de sécurité Supabase ne remonte plus d’alerte après le déplacement des fonctions `SECURITY DEFINER` vers le schéma interne `am_private`. Les alertes de performance restantes indiquent uniquement que les index n’ont pas encore servi, ce qui est attendu sur une base neuve sans données. La production actuelle conserve néanmoins tRPC, Express, MySQL, le stockage S3 et l’IA intégrée pour les écrans qui ne sont pas encore raccordés à Supabase ; la bascule doit donc rester progressive pour éviter toute interruption.
 
 ## Variables d’environnement
 
@@ -20,18 +20,18 @@ Copiez `.env.portable.example`. Dans Cloudflare Pages, renseignez uniquement `VI
 
 ## Supabase
 
-1. Confirmez le projet cible, puis appliquez `supabase/migrations/202608250001_afrique_marketplace_portable.sql` avec la CLI Supabase ou le tableau de bord.
-2. Activez l’authentification téléphone/mot de passe et renseignez les URL de redirection Cloudflare Pages.
-3. Déployez `supabase/functions/verify-identity` avec ses secrets côté serveur.
-4. Vérifiez les RLS avec deux comptes réels : propriétaire, acheteur, vendeur, administrateur et utilisateur non connecté.
+1. Le schéma est déjà appliqué au projet `pnyoanxxifswwwrljqce`. Pour recréer un environnement vierge, exécutez toutes les migrations `202608250001` à `202608250004` dans leur ordre numérique.
+2. Activez l’authentification téléphone/mot de passe et renseignez les URL de redirection Cloudflare Pages dans la configuration Auth du projet.
+3. La fonction `verify-identity` a été revue et protège les chemins de documents par dossier utilisateur. **Ne la déployez qu’après avoir défini `GOOGLE_GENERATIVE_AI_API_KEY` comme secret de fonction** ; aucune clé IA ne doit être ajoutée au frontend ou au dépôt.
+4. Vérifiez les RLS avec deux comptes réels : propriétaire, acheteur, vendeur, administrateur et utilisateur non connecté. Aucun jeu de données fictif de clients, avis ou vérifications ne doit être créé pour ce contrôle.
 5. Importez les utilisateurs, profils, annonces et médias existants après une sauvegarde complète. Les documents d’identité doivent être copiés uniquement vers le bucket privé `marketplace-identity`.
 
 ## GitHub et Cloudflare Pages
 
 1. Créez un dépôt privé, poussez le code et laissez GitHub Actions exécuter `pnpm check`, `pnpm test` et `pnpm build:cloudflare`.
 2. Dans Cloudflare Pages, connectez le dépôt, choisissez la branche `main`, utilisez `pnpm build:cloudflare` et publiez `dist/cloudflare`.
-3. Renseignez les deux variables `VITE_SUPABASE_*` dans les environnements Preview et Production, puis vérifiez les routes profondes `/annonce/:id`, `/vendeur/:id`, `/messages` et `/verification`.
+3. Renseignez `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` et `VITE_BACKEND_MODE=supabase` dans les environnements Preview et Production, puis vérifiez les routes profondes `/annonce/:id`, `/vendeur/:id`, `/messages` et `/verification`.
 
 ## Points avant production
 
-Le branchement des écrans React actuels aux adaptateurs Supabase doit être finalisé après le choix du projet cible, afin de remplacer progressivement les appels tRPC sans interrompre les membres existants. La fonction IA requiert une clé d’un fournisseur externe et doit rester prudente : approbation uniquement à forte confiance, maintien en attente en cas de doute, aucun document exposé publiquement.
+Le catalogue public (`/` et `/annonces`) a été compilé et vérifié avec `VITE_BACKEND_MODE=supabase` : sur la base neuve il affiche correctement l’état vide sans requête tRPC résiduelle. Le hook d’authentification global suit désormais la session Supabase dans ce mode. Les écrans de publication, profil, vérification, messages, suivi et administration possèdent des adaptateurs préparés mais leurs vues React utilisent encore majoritairement le backend legacy ; leur migration fonctionnelle et le transfert des données doivent précéder une activation de production complète. La fonction IA requiert une clé d’un fournisseur externe et doit rester prudente : approbation uniquement à forte confiance, maintien en attente en cas de doute, aucun document exposé publiquement.
