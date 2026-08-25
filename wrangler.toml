@@ -1,0 +1,6 @@
+name = "afrique-marketplace"
+compatibility_date = "2026-08-25"
+pages_build_output_dir = "dist/cloudflare"
+
+# Les secrets ne sont jamais déclarés ici. Ils sont renseignés dans Cloudflare
+# Pages et Supabase, séparément du code versionné.

@@ -128,3 +128,10 @@
 - [x] Transmettre les critères de recherche et de catégorie de l’accueil au catalogue public afin que les annonces demandées soient réellement filtrées.
 - [x] Rendre les conversations et alertes directement accessibles depuis la navigation mobile.
 - [x] Ajouter des preuves de route que le catalogue expose les annonces publiées et que les conversations restent isolées entre leurs membres.
+- [ ] Auditer les dépendances Manus actuelles et distinguer celles qui doivent être remplacées pour une production externe.
+- [ ] Ajouter la configuration portable de build et de routage pour Cloudflare Pages.
+- [ ] Préparer le client Supabase, les variables d’environnement et les couches d’accès portables sans exposer de secret.
+- [ ] Écrire les migrations Supabase, politiques RLS, règles de stockage et plan de reprise des données existantes.
+- [ ] Préparer l’export GitHub, la documentation d’installation, les contrôles de build et les étapes Cloudflare Pages.
+- [ ] Finaliser la migration après choix explicite du projet Supabase cible et des variables de production.
+- [ ] Vérifier les politiques RLS et l’Edge Function de vérification avant toute application sur le projet Supabase cible.
