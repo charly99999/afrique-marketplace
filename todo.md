@@ -121,3 +121,10 @@
 - [x] Tester la section « Personnalisé » sur web et Android pendant une actualisation du profil.
 - [x] Empêcher la réinitialisation des champs de personnalisation pendant la saisie et préserver le texte local du membre.
 - [x] Ajouter un test d’intégration du profil couvrant une saisie suivie d’un rafraîchissement.
+- [x] Auditer la visibilité publique de toutes les annonces publiées, les profils vendeurs et la recherche.
+- [x] Auditer les parcours privés de conversations, alertes, suivi, publication et vérification.
+- [x] Reproduire et corriger les anomalies fonctionnelles détectées pendant le diagnostic complet.
+- [x] Revalider les parcours critiques sur web et Android puis livrer un bilan de diagnostic.
+- [x] Transmettre les critères de recherche et de catégorie de l’accueil au catalogue public afin que les annonces demandées soient réellement filtrées.
+- [x] Rendre les conversations et alertes directement accessibles depuis la navigation mobile.
+- [x] Ajouter des preuves de route que le catalogue expose les annonces publiées et que les conversations restent isolées entre leurs membres.

@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { MarketplaceShell } from "@/components/MarketplaceShell";
 import { QueryErrorState } from "@/components/QueryErrorState";
 import { trpc } from "@/lib/trpc";
+import { listingsHref } from "@/lib/listingFilters";
 
 const categories = [
   { id: "immobilier", label: "Immobilier", copy: "Habiter, louer, investir", icon: Building2 },
@@ -20,6 +21,7 @@ export default function Home() {
   const [city, setCity] = useState("");
   const [category, setCategory] = useState("");
   const filters = useMemo(() => ({ query: query || undefined, city: city || undefined, category: category || undefined }), [query, city, category]);
+  const explorerHref = listingsHref({ query, city, category });
   const listings = trpc.marketplace.listings.search.useQuery(filters);
 
   return (
@@ -41,7 +43,7 @@ export default function Home() {
               <option value="">Toutes les catégories</option>
               {categories.map(item => <option value={item.id} key={item.id}>{item.label}</option>)}
             </select>
-            <Link href="/annonces" className="button button--gold button--wide">Explorer les annonces <ArrowRight size={17} /></Link>
+            <Link href={explorerHref} className="button button--gold button--wide">Explorer les annonces <ArrowRight size={17} /></Link>
           </aside>
         </div>
       </section>

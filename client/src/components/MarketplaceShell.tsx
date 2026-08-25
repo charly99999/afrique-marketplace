@@ -51,6 +51,7 @@ export function MarketplaceShell({ children, title, action }: MarketplaceShellPr
       <nav className="mobile-dock" aria-label="Navigation mobile">
         <Link href="/" className={location === "/" ? "active" : ""}><Search size={19} /><span>Explorer</span></Link>
         <Link href="/annonces" className={location === "/annonces" ? "active" : ""}><ShieldCheck size={19} /><span>Annonces</span></Link>
+        <Link href="/messages" className={location === "/messages" ? "active" : ""}><MessageCircle size={19} /><span>Messages</span></Link>
         <Link href="/vendre" className="mobile-dock__create" aria-label="Publier une annonce"><Plus size={22} /></Link>
         <Link href="/suivis" className={location === "/suivis" ? "active" : ""}><Heart size={19} /><span>Suivis</span></Link>
         <Link href="/profil" className={location === "/profil" ? "active" : ""}><CircleUserRound size={19} /><span>Profil</span></Link>

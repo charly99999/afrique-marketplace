@@ -5,6 +5,9 @@ const { dbMock, analyzeVerificationWithAiMock } = vi.hoisted(() => ({
   dbMock: {
     getProfile: vi.fn(),
     createListing: vi.fn(),
+    searchListings: vi.fn(),
+    getListing: vi.fn(),
+    getPublicProfile: vi.fn(),
     updateProfileDetails: vi.fn(),
     getListingsForUser: vi.fn(),
     getPublicSellerProfile: vi.fn(),
@@ -19,6 +22,9 @@ const { dbMock, analyzeVerificationWithAiMock } = vi.hoisted(() => ({
     saveAiVerificationReview: vi.fn(),
     applyAutomatedVerificationDecision: vi.fn(),
     findOrCreateConversation: vi.fn(),
+    getConversation: vi.fn(),
+    getConversations: vi.fn(),
+    getMessages: vi.fn(),
     createMessage: vi.fn(),
     createNotification: vi.fn(),
     listNotifications: vi.fn(),
@@ -35,9 +41,9 @@ vi.mock("./verificationAi", () => ({ analyzeVerificationWithAi: analyzeVerificat
 
 import { marketplaceRouter } from "./routers/marketplace";
 
-function caller(role: "user" | "admin" = "user") {
+function caller(role: "user" | "admin" = "user", userId = 11) {
   return marketplaceRouter.createCaller({
-    user: { id: 11, role, openId: "marketplace-test", name: "Test", email: null, loginMethod: "phone", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+    user: { id: userId, role, openId: "marketplace-test", name: "Test", email: null, loginMethod: "phone", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
     req: {} as never,
     res: {} as never,
   });
@@ -47,6 +53,19 @@ describe("flux métier marketplace", () => {
   it("empêche effectivement un profil non vérifié de publier", async () => {
     dbMock.getProfile.mockResolvedValueOnce({ verificationStatus: "pending" });
     await expect(caller().listings.create({ title: "Téléphone récent à vendre", description: "Appareil en bon état, avec chargeur et boîte d’origine.", category: "telephones", city: "Dakar", price: 250000, currency: "XOF", condition: "bon_etat", mediaData: [] })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("retourne le catalogue public des annonces publiées à tout visiteur", async () => {
+    const publicListing = { id: 71, userId: 22, title: "Peugeot 301", status: "published", category: "vehicules", city: "Abidjan" };
+    dbMock.searchListings.mockResolvedValueOnce([publicListing]);
+
+    await expect(caller().listings.search({ category: "vehicules", city: "Abidjan" })).resolves.toEqual([publicListing]);
+    expect(dbMock.searchListings).toHaveBeenCalledWith({ category: "vehicules", city: "Abidjan" });
+  });
+
+  it("ne rend jamais accessible le détail d’une annonce non publiée", async () => {
+    dbMock.getListing.mockResolvedValueOnce({ id: 72, status: "hidden" });
+    await expect(caller().listings.detail({ id: 72 })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("alerte les abonnés sans bloquer la publication d’un vendeur vérifié", async () => {
@@ -110,6 +129,21 @@ describe("flux métier marketplace", () => {
     await caller().conversations.send({ recipientId: 22, listingId: 7, body: "Bonjour, est-ce encore disponible ?" });
     expect(dbMock.createMessage).toHaveBeenCalledWith({ conversationId: 44, senderId: 11, body: "Bonjour, est-ce encore disponible ?" });
     expect(dbMock.createNotification).toHaveBeenCalledWith(expect.objectContaining({ userId: 22, type: "message", title: "Nouveau message" }));
+  });
+
+  it("permet à un membre de répondre dans sa conversation et notifie l’autre participant", async () => {
+    dbMock.getConversation.mockResolvedValueOnce({ id: 44, buyerId: 11, sellerId: 22 });
+
+    await expect(caller().conversations.reply({ conversationId: 44, body: "Merci pour votre réponse." })).resolves.toEqual({ success: true });
+    expect(dbMock.createMessage).toHaveBeenCalledWith({ conversationId: 44, senderId: 11, body: "Merci pour votre réponse." });
+    expect(dbMock.createNotification).toHaveBeenCalledWith(expect.objectContaining({ userId: 22, type: "message", title: "Nouveau message" }));
+  });
+
+  it("interdit à un tiers de lire ou répondre à une conversation qui ne lui appartient pas", async () => {
+    dbMock.getConversation.mockResolvedValue({ id: 45, buyerId: 22, sellerId: 33 });
+
+    await expect(caller("user", 11).conversations.messages({ conversationId: 45 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller("user", 11).conversations.reply({ conversationId: 45, body: "Intrusion" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("retourne à un abonné l’alerte persistée de nouvelle annonce dans sa liste d’alertes", async () => {
