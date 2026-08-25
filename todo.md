@@ -157,7 +157,7 @@
 - [x] Auditer et raccorder l’écran Compte à l’inscription, la connexion et la déconnexion Supabase afin d’éliminer toute dépendance tRPC en mode portable.
 - [x] Auditer et raccorder le détail d’annonce au chargement public Supabase et au démarrage sécurisé d’une conversation entre acheteur et vendeur.
 - [x] Auditer et raccorder la fiche vendeur aux données publiques Supabase et aux actions de suivi, sans aucune requête tRPC en mode portable.
-- [ ] Revalider le déploiement Vercel en mode Supabase, y compris l’absence de requêtes `/api/trpc` sur les routes publiques et privées prioritaires.
+- [x] Revalider le déploiement Vercel en mode Supabase, y compris l’absence de requêtes `/api/trpc` sur les routes publiques et privées prioritaires.
 - [x] Définir les routes publiques indexables et exclure explicitement compte, messagerie, profil, vérification, administration et preuves privées du référencement.
 - [x] Publier un robots.txt, un sitemap XML des routes publiques et des métadonnées de base SEO sans inclure de données privées.
 - [x] Vérifier sur Vercel les réponses robots.txt et sitemap.xml, puis documenter la soumission du domaine dans Google Search Console.

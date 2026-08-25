@@ -21,3 +21,7 @@ Sur la fiche vendeur de production, le contrôle réseau observe une requête RE
 Le contrôle `pnpm verify:portable`, exécuté avec les trois variables publiques Supabase, est réussi : vérification TypeScript, 77 tests et build Vite portable. Le build Vercel de production déclenché par le commit `8e38048` est `READY`; le seul avertissement non bloquant concerne la taille du bundle JavaScript.
 
 Les essais à deux comptes, la vérification d’identité réelle consentie et la revue des autorisations RLS restent à réaliser avant de déclarer une validation métier complète.
+
+## Revalidation réseau Vercel — 25 août 2026
+
+Les routes `/annonces` et `/compte` ont été recontrôlées sur l’alias de production avec `VITE_BACKEND_MODE=supabase`. Elles affichent respectivement le catalogue public Supabase et l’authentification interne par téléphone. L’inspection des ressources chargées par le navigateur retourne une liste vide pour le filtre `/api/trpc` sur les deux routes. Cette validation ne remplace pas les scénarios autorisés nécessitant deux comptes réels.
