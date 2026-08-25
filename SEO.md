@@ -8,13 +8,13 @@ Les moteurs de recherche peuvent découvrir exclusivement l’accueil et le cata
 
 ## Étape propriétaire : Google Search Console
 
-La propriété de préfixe d’URL `https://afrique-marketplace.vercel.app/` est en cours de validation. Le fichier HTML émis par Google est publié de manière persistante à la racine publique ; il ne doit pas être supprimé après validation. La prochaine action consiste à valider la propriété dans [Google Search Console][1], puis à soumettre `https://afrique-marketplace.vercel.app/sitemap.xml`. Google indique que Search Console permet de soumettre des sitemaps et des URL individuelles à l’exploration ; l’indexation reste toutefois à sa discrétion. [1] [2]
+La propriété de préfixe d’URL `https://afrique-marketplace.vercel.app/` est **validée** dans Google Search Console par le fichier HTML publié de manière persistante à la racine publique. Ce fichier ne doit pas être supprimé. Le sitemap `https://afrique-marketplace.vercel.app/sitemap.xml` est également **envoyé et accepté** par Google, avec deux pages publiques découvertes au moment de la soumission. Google continuera de le relire périodiquement ; l’indexation des pages reste toutefois à sa discrétion. [1] [2]
 
 Un domaine personnalisé devra remplacer l’adresse `vercel.app` avant toute campagne de visibilité importante. À ce moment, il faudra remplacer l’origine dans `client/src/lib/seo.ts`, `client/public/robots.txt` et `client/public/sitemap.xml`, puis ajouter le nouveau domaine comme propriété Search Console.
 
 ## Contrôles après soumission
 
-Le propriétaire devra vérifier dans Search Console que `robots.txt` est accepté, que le sitemap ne contient que les routes publiques et que les pages `/compte`, `/messages`, `/verification` et `/administration` ne sont pas indexées. Google recommande d’utiliser l’inspection d’URL ou une demande de nouvelle exploration après une mise à jour importante. [2]
+Le propriétaire devra vérifier dans Search Console que `robots.txt` reste accepté, que le sitemap ne contient que les routes publiques et que les pages `/compte`, `/messages`, `/verification` et `/administration` ne sont pas indexées. Google recommande d’utiliser l’inspection d’URL ou une demande de nouvelle exploration après une mise à jour importante. [2]
 
 ## Références
 
