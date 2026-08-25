@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /compte
+Disallow: /profil
+Disallow: /suivis
+Disallow: /verification
+Disallow: /vendre
+Disallow: /messages
+Disallow: /administration
+Disallow: /404
+Disallow: /api/
+
+Sitemap: https://afrique-marketplace.vercel.app/sitemap.xml
