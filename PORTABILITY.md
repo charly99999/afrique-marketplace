@@ -4,6 +4,8 @@
 
 Le projet contient désormais un build sans plugin propriétaire dans `vite.cloudflare.config.ts`, une règle SPA Cloudflare Pages dans `client/public/_redirects`, une configuration `wrangler.toml`, un client Supabase sans secret (`client/src/lib/supabaseClient.ts`), un schéma Postgres/RLS/Storage dans `supabase/migrations/`, une Edge Function de vérification et une intégration continue GitHub.
 
+Les adaptateurs concrets de session, profils, annonces, médias, conversations et notifications se trouvent dans `client/src/lib/marketplaceSupabase.ts`. Le catalogue public de l’accueil et de `/annonces` utilise cette couche lorsque `VITE_BACKEND_MODE=supabase`; il conserve le backend actuel par défaut. Cette bascule permet de valider la découverte publique dans un environnement Supabase de préproduction avant de convertir les autres écrans.
+
 > La clé publishable Supabase peut être livrée au navigateur. La **service role key**, la clé du fournisseur IA et les mots de passe de bases de données ne doivent jamais être ajoutés à Git, à Cloudflare Pages ou à une variable `VITE_*`.
 
 ## État de migration

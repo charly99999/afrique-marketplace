@@ -5,6 +5,7 @@ import { MarketplaceShell } from "@/components/MarketplaceShell";
 import { QueryErrorState } from "@/components/QueryErrorState";
 import { trpc } from "@/lib/trpc";
 import { listingsHref } from "@/lib/listingFilters";
+import { usePublicListings } from "@/lib/usePublicListings";
 
 const categories = [
   { id: "immobilier", label: "Immobilier", copy: "Habiter, louer, investir", icon: Building2 },
@@ -22,7 +23,7 @@ export default function Home() {
   const [category, setCategory] = useState("");
   const filters = useMemo(() => ({ query: query || undefined, city: city || undefined, category: category || undefined }), [query, city, category]);
   const explorerHref = listingsHref({ query, city, category });
-  const listings = trpc.marketplace.listings.search.useQuery(filters);
+  const listings = usePublicListings(filters);
 
   return (
     <MarketplaceShell>
