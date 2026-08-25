@@ -154,3 +154,7 @@
 - [x] Raccorder l’écran Suivis aux profils publics vérifiés Supabase en mode portable tout en préservant le parcours tRPC legacy.
 - [x] Raccorder l’écran Vérification au stockage privé Supabase et à la fonction Edge JWT en mode portable tout en préservant le parcours tRPC legacy.
 - [x] Raccorder l’écran Administration à la fonction Edge Supabase JWT, avec URLs temporaires des preuves et contrôle de rôle côté serveur.
+- [x] Auditer et raccorder l’écran Compte à l’inscription, la connexion et la déconnexion Supabase afin d’éliminer toute dépendance tRPC en mode portable.
+- [x] Auditer et raccorder le détail d’annonce au chargement public Supabase et au démarrage sécurisé d’une conversation entre acheteur et vendeur.
+- [x] Auditer et raccorder la fiche vendeur aux données publiques Supabase et aux actions de suivi, sans aucune requête tRPC en mode portable.
+- [ ] Revalider le déploiement Vercel en mode Supabase, y compris l’absence de requêtes `/api/trpc` sur les routes publiques et privées prioritaires.

@@ -44,6 +44,17 @@ export type PortableSeller = {
   profilePhotoKey: string | null;
 };
 
+export type PortableSellerProfile = PortableSeller & {
+  phone: string | null;
+  bio: string;
+  businessHours: string;
+  address: string;
+  website: string;
+  contactEmail: string;
+  coverPhotoKey: string | null;
+  verificationStatus: "verified";
+};
+
 function normalizeListing(row: Record<string, unknown>): PortableListing {
   return {
     id: String(row.id),
@@ -78,6 +89,25 @@ function normalizeProfile(row: Record<string, unknown>): PortableProfile {
     profilePhotoKey: row.profile_photo_path ? String(row.profile_photo_path) : null,
     coverPhotoKey: row.cover_photo_path ? String(row.cover_photo_path) : null,
     verificationStatus: (row.verification_status ?? "required") as PortableProfile["verificationStatus"],
+  };
+}
+
+function normalizePublicSeller(row: Record<string, unknown>): PortableSellerProfile {
+  return {
+    userId: String(row.id),
+    firstName: String(row.first_name ?? ""),
+    lastName: String(row.last_name ?? ""),
+    phone: row.phone ? String(row.phone) : null,
+    city: String(row.city ?? ""),
+    bio: String(row.bio ?? ""),
+    businessCategory: String(row.business_category ?? ""),
+    businessHours: String(row.business_hours ?? ""),
+    address: String(row.address ?? ""),
+    website: String(row.website ?? ""),
+    contactEmail: String(row.contact_email ?? ""),
+    profilePhotoKey: row.profile_photo_path ? String(row.profile_photo_path) : null,
+    coverPhotoKey: row.cover_photo_path ? String(row.cover_photo_path) : null,
+    verificationStatus: "verified",
   };
 }
 
@@ -198,6 +228,91 @@ export async function searchPortableListings(filters: PortableListingFilters) {
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []).map(item => normalizeListing(item as Record<string, unknown>));
+}
+
+export async function getPortableListingDetail(listingId: string) {
+  const client = requireSupabaseClient();
+  const { data: listing, error: listingError } = await client
+    .from("am_listings")
+    .select("*")
+    .eq("id", listingId)
+    .eq("status", "published")
+    .maybeSingle();
+  if (listingError) throw listingError;
+  if (!listing) return null;
+
+  const { data: seller, error: sellerError } = await client
+    .from("am_public_seller_profiles")
+    .select("*")
+    .eq("id", listing.owner_id)
+    .maybeSingle();
+  if (sellerError) throw sellerError;
+
+  return {
+    listing: normalizeListing(listing as Record<string, unknown>),
+    seller: seller ? normalizePublicSeller(seller as Record<string, unknown>) : null,
+  };
+}
+
+export async function getPortableSellerProfile(sellerId: string) {
+  const client = requireSupabaseClient();
+  const { data: seller, error: sellerError } = await client
+    .from("am_public_seller_profiles")
+    .select("*")
+    .eq("id", sellerId)
+    .maybeSingle();
+  if (sellerError) throw sellerError;
+  if (!seller) return null;
+
+  const { data: listings, error: listingsError } = await client
+    .from("am_listings")
+    .select("*")
+    .eq("owner_id", sellerId)
+    .eq("status", "published")
+    .order("created_at", { ascending: false });
+  if (listingsError) throw listingsError;
+
+  return {
+    seller: normalizePublicSeller(seller as Record<string, unknown>),
+    listings: (listings ?? []).map(item => normalizeListing(item as Record<string, unknown>)),
+  };
+}
+
+export async function getPortableFollowStatus(sellerId: string) {
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) return false;
+  const { data, error } = await client
+    .from("am_seller_follows")
+    .select("seller_id")
+    .eq("follower_id", user.id)
+    .eq("seller_id", sellerId)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
+
+export async function followPortableSeller(sellerId: string) {
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error("Connexion requise.");
+  const { error } = await client.from("am_seller_follows").insert({ follower_id: user.id, seller_id: sellerId });
+  if (error) throw error;
+}
+
+export async function unfollowPortableSeller(sellerId: string) {
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error("Connexion requise.");
+  const { error } = await client
+    .from("am_seller_follows")
+    .delete()
+    .eq("follower_id", user.id)
+    .eq("seller_id", sellerId);
+  if (error) throw error;
 }
 
 export async function createPortableListing(payload: Omit<PortableListing, "id" | "userId" | "status" | "createdAt" | "updatedAt">) {
