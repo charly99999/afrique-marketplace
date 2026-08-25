@@ -143,3 +143,4 @@
 - [ ] Déployer `verify-identity` seulement après configuration sécurisée de la clé IA externe dans Supabase, puis tester un dossier réel avec revue humaine de secours.
 - [ ] Raccorder les écrans Profil, Publier, Messages, Suivis, Vérification et Administration à leurs adaptateurs Supabase, puis exécuter les contrôles d’accès à deux comptes.
 - [ ] Configurer les variables Supabase et le mode portable dans Cloudflare Pages pour Preview et Production, puis revalider les parcours exposés.
+- [x] Enregistrer `GOOGLE_GENERATIVE_AI_API_KEY` comme secret chiffré Supabase et déployer `verify-identity` avec vérification JWT active.

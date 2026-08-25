@@ -22,7 +22,7 @@ Copiez `.env.portable.example`. Dans Cloudflare Pages, renseignez uniquement `VI
 
 1. Le schéma est déjà appliqué au projet `pnyoanxxifswwwrljqce`. Pour recréer un environnement vierge, exécutez toutes les migrations `202608250001` à `202608250004` dans leur ordre numérique.
 2. Activez l’authentification téléphone/mot de passe et renseignez les URL de redirection Cloudflare Pages dans la configuration Auth du projet.
-3. La fonction `verify-identity` a été revue et protège les chemins de documents par dossier utilisateur. **Ne la déployez qu’après avoir défini `GOOGLE_GENERATIVE_AI_API_KEY` comme secret de fonction** ; aucune clé IA ne doit être ajoutée au frontend ou au dépôt.
+3. La fonction `verify-identity` est déployée en version 1 avec `verify_jwt=true`. Elle protège les chemins de documents par dossier utilisateur, lit `GOOGLE_GENERATIVE_AI_API_KEY` uniquement dans les secrets chiffrés Supabase et refuse une requête non authentifiée (contrôle HTTP 401 validé). Un test sur un vrai dossier soumis reste requis avant activation opérationnelle à grande échelle ; aucun jeu de preuves artificiel ne doit être créé.
 4. Vérifiez les RLS avec deux comptes réels : propriétaire, acheteur, vendeur, administrateur et utilisateur non connecté. Aucun jeu de données fictif de clients, avis ou vérifications ne doit être créé pour ce contrôle.
 5. Importez les utilisateurs, profils, annonces et médias existants après une sauvegarde complète. Les documents d’identité doivent être copiés uniquement vers le bucket privé `marketplace-identity`.
 
