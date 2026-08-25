@@ -32,7 +32,7 @@ Copiez `.env.portable.example`. Dans Vercel, renseignez uniquement `VITE_SUPABAS
 2. Le projet Vercel `afrique-marketplace` est relié au dépôt privé `charly99999/afrique-marketplace`, sur la branche de production `main`. Sa configuration source force `pnpm build:cloudflare`, publie `dist/cloudflare` et applique une réécriture SPA vers `index.html`.
 3. Renseignez `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` et `VITE_BACKEND_MODE=supabase` dans les environnements Preview et Production Vercel, puis vérifiez les routes profondes `/annonce/:id`, `/vendeur/:id`, `/messages` et `/verification`.
 
-La préparation Cloudflare Pages est conservée dans le dépôt pour réversibilité, mais n’est plus la cible de publication. Le projet Vercel a été créé et déployé depuis `main` ; la version actuellement accessible répond en HTTPS à `https://afrique-marketplace-gd7g3oar6-marcarnaudkonan2-7721s-projects.vercel.app`. Les variables publiques Supabase restent nécessaires avant de considérer ce déploiement comme la bascule finale.
+La préparation Cloudflare Pages est conservée dans le dépôt pour réversibilité, mais n’est plus la cible de publication. Le projet Vercel a été créé et déployé depuis `main` ; la version actuellement accessible répond en HTTPS à `https://afrique-marketplace.vercel.app`. Les variables publiques Supabase restent nécessaires avant de considérer ce déploiement comme la bascule finale.
 
 ## Points avant production
 
