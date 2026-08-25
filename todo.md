@@ -206,12 +206,12 @@
 - [x] Implémenter les améliorations marketplace prioritaires retenues après audit.
 - [x] Ajouter les tests unitaires et d’intégration couvrant chaque amélioration marketplace.
 - [x] Revalider web, Android, responsive, build et publication après les améliorations.
-- [ ] Reproduire l’incident critique web/Android : même numéro, session non reconnue et publication absente dans l’APK.
+- [x] Reproduire l’incident critique web/Android : même numéro, session non reconnue et publication absente dans l’APK.
 - [x] Comparer les variables Supabase embarquées dans l’APK avec celles de Vercel sans afficher de secrets.
-- [ ] Vérifier les comptes et profils réellement persistés sans lire ni modifier de mot de passe.
+- [x] Vérifier les comptes et profils réellement persistés sans lire ni modifier de mot de passe.
 - [x] Empêcher une réinscription ambiguë avec le même numéro et afficher une erreur de compte existant.
 - [ ] Garantir que la publication persistée est retrouvable par son propriétaire et visible publiquement depuis les deux plateformes.
 - [x] Ajouter des tests de cohérence inter-plateforme et publier une release après validation.
-- [ ] Corriger le HTTP 503 de `verify-identity`, conserver le dossier en attente de façon explicite et permettre sa reprise par l’administration.
-- [ ] Afficher clairement dans Publier que la diffusion est bloquée tant que le profil n’est pas vérifié, avec accès direct à Vérification.
+- [x] Corriger le HTTP 503 de `verify-identity`, conserver le dossier en attente de façon explicite et permettre sa reprise par l’administration.
+- [x] Afficher clairement dans Publier que la diffusion est bloquée tant que le profil n’est pas vérifié, avec accès direct à Vérification.
 - [ ] Rejouer le parcours compte → vérification IA → approbation → publication après correction, sans utiliser de données inventées.
