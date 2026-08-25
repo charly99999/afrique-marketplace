@@ -191,3 +191,6 @@
 - [ ] Exécuter les contrôles RLS Supabase avec deux comptes réels, dont un administrateur, et documenter les résultats.
 - [ ] Tester `verify-identity` sur un dossier réel consenti, avec maintien en attente et revue humaine en cas de doute.
 - [ ] Revalider en production Vercel et sur l’APK les parcours Supabase critiques après les essais réels avant de qualifier la migration de complète.
+- [x] Comparer le bundle web de production et le bundle embarqué dans l’APK pour détecter toute divergence de version ou de configuration.
+- [x] Comparer les points d’entrée et l’interface responsive web/Android, puis aligner toute différence réellement constatée.
+- [x] Recompiler et livrer une version web/Android synchronisée après comparaison.
