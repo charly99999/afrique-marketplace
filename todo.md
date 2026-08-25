@@ -212,3 +212,6 @@
 - [x] Empêcher une réinscription ambiguë avec le même numéro et afficher une erreur de compte existant.
 - [ ] Garantir que la publication persistée est retrouvable par son propriétaire et visible publiquement depuis les deux plateformes.
 - [x] Ajouter des tests de cohérence inter-plateforme et publier une release après validation.
+- [ ] Corriger le HTTP 503 de `verify-identity`, conserver le dossier en attente de façon explicite et permettre sa reprise par l’administration.
+- [ ] Afficher clairement dans Publier que la diffusion est bloquée tant que le profil n’est pas vérifié, avec accès direct à Vérification.
+- [ ] Rejouer le parcours compte → vérification IA → approbation → publication après correction, sans utiliser de données inventées.
