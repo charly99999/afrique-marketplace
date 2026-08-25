@@ -4,11 +4,11 @@
 
 Afrique Marketplace dispose maintenant d’une plateforme Android Capacitor avec l’identifiant stable `com.afriquemarketplace.app`. Le frontend Vite est embarqué depuis `dist/cloudflare`, tandis que Vercel reste l’hébergement web et Supabase reste le backend en ligne pour Auth, Postgres, Storage, RLS et les fonctions Edge.
 
-Un APK debug a été compilé avec succès le 25 août 2026 :
+Un APK debug **relié à Supabase** a été compilé avec succès le 25 août 2026 :
 
 `android/app/build/outputs/apk/debug/app-debug.apk`
 
-L’APK de test fait environ 4,4 Mo. Son empreinte SHA-256 de contrôle est `6187154eb3770ffacaa72d2984e31a25193c87719e1f1a7ab532c8b9d7cec747`. Il s’agit d’un paquet de test, pas encore d’une version signée pour Google Play.
+L’APK de test fait environ 4,7 Mo. Son empreinte SHA-256 de contrôle est `101fbfc4108836f818dd0721e0740b76a3776f2286eb7bd8a8addc96c7f387a0`. Il s’agit d’un paquet de test, pas encore d’une version signée pour Google Play.
 
 ## Générer l’APK
 
