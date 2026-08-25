@@ -27,7 +27,7 @@ Deno.serve(async (request) => {
       admin.from("am_profiles").select("id", { count: "exact", head: true }),
       admin.from("am_identity_verifications").select("id", { count: "exact", head: true }).eq("status", "pending"),
       admin.from("am_listings").select("id", { count: "exact", head: true }),
-      admin.from("am_listings").select("id", { count: "exact", head: true }).eq("status", "hidden"),
+      admin.from("am_listing_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
     ]);
     return respond({ users: users.count ?? 0, pendingVerifications: pending.count ?? 0, listings: listings.count ?? 0, flaggedContent: flagged.count ?? 0 });
   }
@@ -53,6 +53,24 @@ Deno.serve(async (request) => {
     const { data, error } = await admin.storage.from("marketplace-identity").createSignedUrl(path, 60);
     if (error || !data?.signedUrl) return respond({ error: "Preuve privée indisponible." }, 500);
     return respond({ url: data.signedUrl });
+  }
+
+  if (action === "reports") {
+    const { data: reports, error } = await admin.from("am_listing_reports").select("id, listing_id, reporter_id, reason, details, status, created_at").eq("status", "pending").order("created_at", { ascending: true }).limit(200);
+    if (error) return respond({ error: "Signalements indisponibles." }, 500);
+    const listingIds = (reports ?? []).map(item => item.listing_id);
+    const { data: listings } = listingIds.length ? await admin.from("am_listings").select("id, title").in("id", listingIds) : { data: [] };
+    const titles = new Map((listings ?? []).map(item => [item.id, item.title]));
+    return respond((reports ?? []).map(item => ({ id: item.id, listingId: item.listing_id, listingTitle: titles.get(item.listing_id) ?? "Annonce supprimée", reporterId: item.reporter_id, reason: item.reason, details: item.details, status: item.status, createdAt: item.created_at })));
+  }
+
+  if (action === "report") {
+    const reportId = String(body?.reportId ?? "");
+    const status = body?.status;
+    if (!reportId || !["reviewed", "dismissed", "actioned"].includes(status)) return respond({ error: "Statut de signalement invalide." }, 400);
+    const { error } = await admin.from("am_listing_reports").update({ status }).eq("id", reportId);
+    if (error) return respond({ error: "Signalement non mis à jour." }, 500);
+    return respond({ status });
   }
 
   if (action === "listings") {
