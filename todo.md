@@ -116,3 +116,8 @@
 - [x] Tester le lien, le marquage lu et le rendu des alertes ouvrables sur mobile et web.
 - [x] Ajouter un repli ouvrant l’annonce même si le marquage lu échoue, puis le couvrir par test.
 - [x] Ajouter un test intégré Messages couvrant le clic, le marquage lu et la navigation vers l’annonce.
+- [x] Diagnostiquer le comportement défaillant de la section « Personnalisé » signalé par le membre.
+- [x] Corriger la réinitialisation des champs de la section « Personnalisé » pendant la saisie.
+- [x] Tester la section « Personnalisé » sur web et Android pendant une actualisation du profil.
+- [x] Empêcher la réinitialisation des champs de personnalisation pendant la saisie et préserver le texte local du membre.
+- [x] Ajouter un test d’intégration du profil couvrant une saisie suivie d’un rafraîchissement.

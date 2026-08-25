@@ -1,7 +1,9 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { fileToDataUrl, mediaErrorMessage, storageUrl } from "@/lib/media";
+import { profileDetailsFromData, synchronizeProfileDetails } from "@/lib/profileDetails";
 import { trpc } from "@/lib/trpc";
 import { BriefcaseBusiness, Camera, CheckCircle2, ChevronRight, Clock3, ExternalLink, FileText, ImagePlus, Loader2, LockKeyhole, Mail, MapPin, Pencil, Phone, Save, ShieldAlert, ShieldCheck, UploadCloud, X } from "lucide-react";
+import React from "react";
 import { type ChangeEvent, useEffect, useState } from "react";
 import { Link } from "wouter";
 import { MarketplaceShell } from "@/components/MarketplaceShell";
@@ -30,15 +32,9 @@ export default function Profile() {
 
   useEffect(() => {
     if (!data) return;
-    setDetails({
-      bio: data.bio ?? "",
-      businessCategory: data.businessCategory ?? "",
-      businessHours: data.businessHours ?? "",
-      address: data.address ?? "",
-      website: data.website ?? "",
-      contactEmail: data.contactEmail ?? "",
-    });
-  }, [data]);
+    const incomingDetails = profileDetailsFromData(data);
+    setDetails(current => synchronizeProfileDetails(current, incomingDetails, editingDetails));
+  }, [data, editingDetails]);
 
   const submitProfile = (event: React.FormEvent) => {
     event.preventDefault();
