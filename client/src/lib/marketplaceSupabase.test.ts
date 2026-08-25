@@ -13,6 +13,7 @@ import {
   getPortableSellerProfile,
   signInWithPhoneAndPassword,
   signUpWithPhoneAndPassword,
+  searchPortableListings,
   unfollowPortableSeller,
 } from "./marketplaceSupabase";
 
@@ -151,5 +152,31 @@ describe("authentification par téléphone sans SMS", () => {
   it("signale un compte non ouvert si Supabase ne renvoie pas de session", async () => {
     state.client = { auth: { signUp: vi.fn().mockResolvedValue({ data: { session: null, user: { id: "pending-user" } }, error: null }), signInWithPassword: vi.fn() } };
     await expect(signUpWithPhoneAndPassword({ phone: "+2250565242349", password: "different-test-password", firstName: "Awa", lastName: "Kone", city: "Abidjan" })).rejects.toThrow("session n’a pas été ouverte");
+  });
+});
+
+
+describe("visibilité publique du catalogue", () => {
+  it("charge les annonces publiées pour tous sans filtre de propriétaire", async () => {
+    const row = { ...listingRow, owner_id: "other-user" };
+    const chain = {
+      eq: vi.fn(),
+      order: vi.fn(),
+      limit: vi.fn(),
+      or: vi.fn(),
+      then: (resolve: (value: { data: typeof row[]; error: null }) => unknown) => resolve({ data: [row], error: null }),
+    };
+    chain.eq.mockReturnValue(chain);
+    chain.order.mockReturnValue(chain);
+    chain.limit.mockReturnValue(chain);
+    chain.or.mockReturnValue(chain);
+    state.client = { from: vi.fn(() => ({ select: vi.fn(() => chain) })) };
+
+    const listings = await searchPortableListings({ query: "Appartement" });
+
+    expect(listings).toHaveLength(1);
+    expect(listings[0].userId).toBe("other-user");
+    expect(chain.eq).toHaveBeenCalledWith("status", "published");
+    expect(chain.or).toHaveBeenCalledWith("title.ilike.%Appartement%,description.ilike.%Appartement%");
   });
 });

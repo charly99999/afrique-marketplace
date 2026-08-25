@@ -22,6 +22,8 @@ Deno.serve(async (request) => {
   if (typeof verificationId !== "string" || !verificationId) return Response.json({ error: "Identifiant de dossier invalide." }, { status: 400, headers: corsHeaders });
   const { data: verification } = await admin.from("am_identity_verifications").select("id,user_id,document_type,document_path,selfie_path,status").eq("id", verificationId).eq("user_id", user.id).eq("status", "pending").single();
   if (!verification) return Response.json({ error: "Dossier introuvable ou déjà traité." }, { status: 404, headers: corsHeaders });
+  const { data: profile } = await admin.from("am_profiles").select("first_name,last_name,city").eq("id", user.id).single();
+  if (!profile) return Response.json({ error: "Profil introuvable, dossier conservé en attente." }, { status: 422, headers: corsHeaders });
   const ownedPrefix = `${user.id}/`;
   if (!verification.document_path.startsWith(ownedPrefix) || !verification.selfie_path.startsWith(ownedPrefix)) return Response.json({ error: "Chemins de preuve invalides." }, { status: 403, headers: corsHeaders });
 
@@ -39,7 +41,8 @@ Deno.serve(async (request) => {
     return { inlineData: { mimeType: image.headers.get("content-type")?.split(";")[0] || "image/jpeg", data: btoa(binary) } };
   };
   const [documentImage, selfieImage] = await Promise.all([toInlineImage(verification.document_path), toInlineImage(verification.selfie_path)]);
-  const prompt = `Analyse uniquement la lisibilité du document (${verification.document_type}), la présence d’un visage sur le selfie et la cohérence apparente avec le profil. Retourne un JSON: recommendation(approve|reject|manual_review), confidence(0-100), documentReadable, selfieFaceVisible, profileInformationConsistent, reasons. N’infère aucun attribut sensible.`;
+  const declaredProfile = JSON.stringify({ prenom: profile.first_name, nom: profile.last_name, ville: profile.city });
+  const prompt = `Tu analyses un dossier d’identité pour une marketplace. Document déclaré: ${verification.document_type}. Profil déclaré (à comparer visuellement au document, sans prétendre identifier la personne): ${declaredProfile}. Le selfie doit montrer nettement un visage et le document doit être lisible. Retourne uniquement un JSON avec recommendation (approve|reject|manual_review), confidence (0-100), documentReadable, selfieFaceVisible, profileInformationConsistent et reasons. Approve uniquement si les trois indicateurs sont vrais et la confiance est au moins 85. Reject seulement si le document ou le selfie est inutilisable ; dans tout autre cas, manual_review. N’infère aucun attribut sensible.`;
   const modelResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${aiKey}`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }, documentImage, selfieImage] }], generationConfig: { responseMimeType: "application/json" } }),
   });
@@ -51,11 +54,18 @@ Deno.serve(async (request) => {
   } catch {
     return Response.json({ error: "Réponse d’analyse invalide, dossier conservé en attente." }, { status: 503, headers: corsHeaders });
   }
-  const approved = review.recommendation === "approve" && review.confidence >= 85 && review.documentReadable && review.selfieFaceVisible && review.profileInformationConsistent;
-  const rejected = review.recommendation === "reject" && (!review.documentReadable || !review.selfieFaceVisible);
+  const recommendation = review.recommendation;
+  const confidence = typeof review.confidence === "number" ? review.confidence : -1;
+  const documentReadable = review.documentReadable === true;
+  const selfieFaceVisible = review.selfieFaceVisible === true;
+  const profileInformationConsistent = review.profileInformationConsistent === true;
+  const reasons = Array.isArray(review.reasons) ? review.reasons.filter((reason): reason is string => typeof reason === "string").slice(0, 5) : [];
+  const approved = recommendation === "approve" && confidence >= 85 && documentReadable && selfieFaceVisible && profileInformationConsistent;
+  const rejected = (recommendation === "reject" || recommendation === "resubmit") && (!documentReadable || !selfieFaceVisible);
   const status = approved ? "approved" : rejected ? "rejected" : "pending";
-  await admin.from("am_identity_verifications").update({ status, ai_review: review, ai_reviewed_at: new Date().toISOString(), admin_note: status === "rejected" ? (review.reasons ?? []).join(" ") : null }).eq("id", verificationId);
+  const normalizedReview = { recommendation, confidence, documentReadable, selfieFaceVisible, profileInformationConsistent, reasons };
+  await admin.from("am_identity_verifications").update({ status, ai_review: normalizedReview, ai_reviewed_at: new Date().toISOString(), admin_note: status === "rejected" ? reasons.join(" ") : null }).eq("id", verificationId);
   if (approved) await admin.from("am_profiles").update({ verification_status: "verified", profile_photo_path: verification.selfie_path }).eq("id", user.id);
   if (status !== "pending") await admin.from("am_notifications").insert({ user_id: user.id, type: "verification", title: status === "approved" ? "Profil vérifié" : "Nouvelle soumission requise", body: status === "approved" ? "Votre badge vérifié est désormais actif." : "Votre dossier doit être soumis à nouveau avec des preuves plus lisibles." });
-  return Response.json({ status, review }, { headers: corsHeaders });
+  return Response.json({ status, review: normalizedReview }, { headers: corsHeaders });
 });

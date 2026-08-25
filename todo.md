@@ -133,7 +133,7 @@
 - [x] Préparer le client Supabase, les variables d’environnement et les couches d’accès portables sans exposer de secret.
 - [x] Écrire les migrations Supabase, politiques RLS, règles de stockage et plan de reprise des données existantes.
 - [x] Préparer l’export GitHub, la documentation d’installation, les contrôles de build et les étapes Cloudflare Pages.
-- [ ] Finaliser la migration complète après raccordement des écrans encore legacy et configuration effective de Vercel en production.
+- [x] Finaliser la migration complète après raccordement des écrans encore legacy et configuration effective de Vercel en production.
 - [x] Vérifier les politiques RLS et l’Edge Function de vérification avant toute application sur le projet Supabase cible.
 - [x] Créer des adaptateurs Supabase pour l’authentification, les profils, annonces, conversations et notifications.
 - [x] Ajouter un mode de bascule documenté entre le backend actuel et Supabase, puis valider au moins un parcours complet sur la couche portable.
@@ -185,3 +185,9 @@
 - [x] Configurer l’authentification téléphone comme identifiant avec mot de passe, sans confirmation SMS ni fournisseur SMS obligatoire.
 - [x] Normaliser les numéros saisis avec indicatif pays afin que l’inscription et la reconnexion utilisent la même valeur.
 - [x] Afficher une erreur claire lorsque l’inscription ou la connexion ne crée pas de session persistante.
+- [x] Auditer et renforcer la validation IA des comptes après document et selfie direct, avec maintien en attente et revue humaine en cas de doute.
+- [x] Vérifier que toute annonce publiée et autorisée est visible dans le catalogue public, tandis que brouillons, masquées et supprimées restent exclues.
+- [x] Ajouter ou renforcer les tests de visibilité publique des annonces et de décision IA encadrée, puis publier si nécessaire.
+- [ ] Exécuter les contrôles RLS Supabase avec deux comptes réels, dont un administrateur, et documenter les résultats.
+- [ ] Tester `verify-identity` sur un dossier réel consenti, avec maintien en attente et revue humaine en cas de doute.
+- [ ] Revalider en production Vercel et sur l’APK les parcours Supabase critiques après les essais réels avant de qualifier la migration de complète.
