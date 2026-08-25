@@ -135,5 +135,5 @@
 - [x] Préparer l’export GitHub, la documentation d’installation, les contrôles de build et les étapes Cloudflare Pages.
 - [ ] Finaliser la migration après choix explicite du projet Supabase cible et des variables de production.
 - [ ] Vérifier les politiques RLS et l’Edge Function de vérification avant toute application sur le projet Supabase cible.
-- [ ] Créer des adaptateurs Supabase pour l’authentification, les profils, annonces, conversations et notifications.
+- [x] Créer des adaptateurs Supabase pour l’authentification, les profils, annonces, conversations et notifications.
 - [ ] Ajouter un mode de bascule documenté entre le backend actuel et Supabase, puis valider au moins un parcours complet sur la couche portable.
