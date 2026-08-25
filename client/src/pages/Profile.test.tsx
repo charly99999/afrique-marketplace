@@ -7,13 +7,13 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/backendMode", () => ({ isSupabaseMode: false }));
 
-const { state } = vi.hoisted(() => ({ state: { profile: null as Record<string, unknown> | null } }));
+const { state } = vi.hoisted(() => ({ state: { profile: null as Record<string, unknown> | null, logout: vi.fn().mockResolvedValue(undefined), navigate: vi.fn() } }));
 
-vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ isAuthenticated: true, user: { id: 11 } }) }));
+vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ isAuthenticated: true, user: { id: 11 }, logout: state.logout }) }));
 vi.mock("@/components/MarketplaceShell", () => ({ MarketplaceShell: ({ children }: { children: React.ReactNode }) => <main>{children}</main> }));
 vi.mock("@/components/QueryErrorState", () => ({ QueryErrorState: ({ message }: { message: string }) => <p>{message}</p> }));
 vi.mock("@/lib/media", () => ({ fileToDataUrl: vi.fn(), mediaErrorMessage: vi.fn(), storageUrl: (value: string) => value }));
-vi.mock("wouter", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
+vi.mock("wouter", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>, useLocation: () => ["/profil", state.navigate] }));
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     useUtils: () => ({ marketplace: { profile: { mine: { invalidate: vi.fn() } } } }),
@@ -48,5 +48,21 @@ describe("Personnaliser le profil", () => {
     await act(async () => { renderer!.update(<QueryClientProvider client={queryClient}><Profile /></QueryClientProvider>); });
 
     expect(renderer!.root.findByType("textarea").props.value).toBe("Mon texte ne doit pas disparaître");
+  });
+
+  it("déconnecte la session et revient à l’écran Compte", async () => {
+    state.profile = { id: 1, userId: 11, firstName: "Awa", lastName: "Traoré", phone: "+22501020304", city: "Abidjan", bio: "Présentation initiale", businessCategory: "Commerce", businessHours: null, address: null, website: null, contactEmail: null, coverPhotoKey: null, profilePhotoKey: null, verificationStatus: "verified" };
+    state.logout.mockClear();
+    state.navigate.mockClear();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    let renderer: ReactTestRenderer;
+
+    await act(async () => { renderer = create(<QueryClientProvider client={queryClient}><Profile /></QueryClientProvider>); });
+    const logoutButton = renderer!.root.findAllByType("button").find(button => Array.isArray(button.props.children) && button.props.children.includes("Déconnexion"));
+    expect(logoutButton).toBeDefined();
+    await act(async () => { await logoutButton!.props.onClick(); });
+
+    expect(state.logout).toHaveBeenCalledOnce();
+    expect(state.navigate).toHaveBeenCalledWith("/compte");
   });
 });

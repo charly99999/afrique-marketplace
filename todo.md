@@ -194,3 +194,6 @@
 - [x] Comparer le bundle web de production et le bundle embarqué dans l’APK pour détecter toute divergence de version ou de configuration.
 - [x] Comparer les points d’entrée et l’interface responsive web/Android, puis aligner toute différence réellement constatée.
 - [x] Recompiler et livrer une version web/Android synchronisée après comparaison.
+- [x] Ajouter un bouton Déconnexion visible dans l’espace membre web et Android.
+- [x] Vérifier que la session est invalidée et que l’utilisateur revient à Compte après déconnexion.
+- [x] Ajouter un test de régression du bouton Déconnexion et publier la correction.
