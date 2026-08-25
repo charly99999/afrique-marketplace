@@ -2,11 +2,11 @@
 
 ## Éléments préparés
 
-Le projet contient désormais un build sans plugin propriétaire dans `vite.cloudflare.config.ts`, une règle SPA Cloudflare Pages dans `client/public/_redirects`, une configuration `wrangler.toml`, un client Supabase sans secret (`client/src/lib/supabaseClient.ts`), un schéma Postgres/RLS/Storage dans `supabase/migrations/`, une Edge Function de vérification et une intégration continue GitHub.
+Le projet contient désormais un build sans plugin propriétaire dans `vite.cloudflare.config.ts`, une règle SPA portable dans `client/public/_redirects`, une configuration Vercel dans `vercel.json`, un client Supabase sans secret (`client/src/lib/supabaseClient.ts`), un schéma Postgres/RLS/Storage dans `supabase/migrations/`, une Edge Function de vérification et une intégration continue GitHub.
 
 Les adaptateurs concrets de session, profils, annonces, médias, conversations et notifications se trouvent dans `client/src/lib/marketplaceSupabase.ts`. Le catalogue public de l’accueil et de `/annonces` utilise cette couche lorsque `VITE_BACKEND_MODE=supabase`; il conserve le backend actuel par défaut. Cette bascule permet de valider la découverte publique dans un environnement Supabase de préproduction avant de convertir les autres écrans.
 
-> La clé publishable Supabase peut être livrée au navigateur. La **service role key**, la clé du fournisseur IA et les mots de passe de bases de données ne doivent jamais être ajoutés à Git, à Cloudflare Pages ou à une variable `VITE_*`.
+> La clé publishable Supabase peut être livrée au navigateur. La **service role key**, la clé du fournisseur IA et les mots de passe de bases de données ne doivent jamais être ajoutés à Git, à Vercel ou à une variable `VITE_*`.
 
 ## État de migration
 
@@ -16,21 +16,23 @@ Le contrôle de sécurité Supabase ne remonte plus d’alerte après le déplac
 
 ## Variables d’environnement
 
-Copiez `.env.portable.example`. Dans Cloudflare Pages, renseignez uniquement `VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY`. Dans Supabase Edge Functions, renseignez `SUPABASE_SERVICE_ROLE_KEY` et `GOOGLE_GENERATIVE_AI_API_KEY`. Les secrets actuels Manus ne font pas partie de la nouvelle architecture.
+Copiez `.env.portable.example`. Dans Vercel, renseignez uniquement `VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY`; activez aussi `VITE_BACKEND_MODE=supabase` au moment de la bascule du catalogue. Dans Supabase Edge Functions, renseignez `SUPABASE_SERVICE_ROLE_KEY` et `GOOGLE_GENERATIVE_AI_API_KEY`. Les secrets actuels Manus ne font pas partie de la nouvelle architecture.
 
 ## Supabase
 
 1. Le schéma est déjà appliqué au projet `pnyoanxxifswwwrljqce`. Pour recréer un environnement vierge, exécutez toutes les migrations `202608250001` à `202608250004` dans leur ordre numérique.
-2. Activez l’authentification téléphone/mot de passe et renseignez les URL de redirection Cloudflare Pages dans la configuration Auth du projet.
+2. Activez l’authentification téléphone/mot de passe et renseignez les URL de redirection Vercel dans la configuration Auth du projet.
 3. La fonction `verify-identity` est déployée en version 1 avec `verify_jwt=true`. Elle protège les chemins de documents par dossier utilisateur, lit `GOOGLE_GENERATIVE_AI_API_KEY` uniquement dans les secrets chiffrés Supabase et refuse une requête non authentifiée (contrôle HTTP 401 validé). Un test sur un vrai dossier soumis reste requis avant activation opérationnelle à grande échelle ; aucun jeu de preuves artificiel ne doit être créé.
 4. Vérifiez les RLS avec deux comptes réels : propriétaire, acheteur, vendeur, administrateur et utilisateur non connecté. Aucun jeu de données fictif de clients, avis ou vérifications ne doit être créé pour ce contrôle.
 5. Importez les utilisateurs, profils, annonces et médias existants après une sauvegarde complète. Les documents d’identité doivent être copiés uniquement vers le bucket privé `marketplace-identity`.
 
-## GitHub et Cloudflare Pages
+## GitHub et Vercel
 
 1. Créez un dépôt privé, poussez le code et laissez GitHub Actions exécuter `pnpm check`, `pnpm test` et `pnpm build:cloudflare`.
-2. Dans Cloudflare Pages, connectez le dépôt, choisissez la branche `main`, utilisez `pnpm build:cloudflare` et publiez `dist/cloudflare`.
-3. Renseignez `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` et `VITE_BACKEND_MODE=supabase` dans les environnements Preview et Production, puis vérifiez les routes profondes `/annonce/:id`, `/vendeur/:id`, `/messages` et `/verification`.
+2. Le projet Vercel `afrique-marketplace` est relié au dépôt privé `charly99999/afrique-marketplace`, sur la branche de production `main`. Sa configuration source force `pnpm build:cloudflare`, publie `dist/cloudflare` et applique une réécriture SPA vers `index.html`.
+3. Renseignez `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` et `VITE_BACKEND_MODE=supabase` dans les environnements Preview et Production Vercel, puis vérifiez les routes profondes `/annonce/:id`, `/vendeur/:id`, `/messages` et `/verification`.
+
+La préparation Cloudflare Pages est conservée dans le dépôt pour réversibilité, mais n’est plus la cible de publication. Le projet Vercel a été créé avec un aperçu initial lié au commit `main`; la configuration Vercel et les variables publiques Supabase doivent être présentes dans Git avant de valider le déploiement final.
 
 ## Points avant production
 

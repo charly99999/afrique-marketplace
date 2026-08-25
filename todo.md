@@ -133,7 +133,7 @@
 - [x] Préparer le client Supabase, les variables d’environnement et les couches d’accès portables sans exposer de secret.
 - [x] Écrire les migrations Supabase, politiques RLS, règles de stockage et plan de reprise des données existantes.
 - [x] Préparer l’export GitHub, la documentation d’installation, les contrôles de build et les étapes Cloudflare Pages.
-- [ ] Finaliser la migration complète après raccordement des écrans encore legacy et configuration effective de Cloudflare Pages en production.
+- [ ] Finaliser la migration complète après raccordement des écrans encore legacy et configuration effective de Vercel en production.
 - [x] Vérifier les politiques RLS et l’Edge Function de vérification avant toute application sur le projet Supabase cible.
 - [x] Créer des adaptateurs Supabase pour l’authentification, les profils, annonces, conversations et notifications.
 - [x] Ajouter un mode de bascule documenté entre le backend actuel et Supabase, puis valider au moins un parcours complet sur la couche portable.
@@ -142,5 +142,6 @@
 - [x] Supprimer les requêtes d’authentification tRPC résiduelles du shell lorsque le mode Supabase est activé, puis revalider le catalogue compilé.
 - [ ] Déployer `verify-identity` seulement après configuration sécurisée de la clé IA externe dans Supabase, puis tester un dossier réel avec revue humaine de secours.
 - [ ] Raccorder les écrans Profil, Publier, Messages, Suivis, Vérification et Administration à leurs adaptateurs Supabase, puis exécuter les contrôles d’accès à deux comptes.
-- [ ] Configurer les variables Supabase et le mode portable dans Cloudflare Pages pour Preview et Production, puis revalider les parcours exposés.
+- [x] Abandonner la configuration de publication Cloudflare Pages à la demande explicite du propriétaire, sans supprimer les artefacts portables déjà préparés.
 - [x] Enregistrer `GOOGLE_GENERATIVE_AI_API_KEY` comme secret chiffré Supabase et déployer `verify-identity` avec vérification JWT active.
+- [ ] Créer le projet Vercel relié à GitHub, définir les variables publiques Supabase pour Preview et Production, puis déployer le build Vite portable.
