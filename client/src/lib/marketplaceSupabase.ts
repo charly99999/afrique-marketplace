@@ -118,6 +118,17 @@ export async function getPortableSession() {
   return data.session;
 }
 
+export function toMarketplaceAuthError(error: unknown, action: "signup" | "signin") {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  if (action === "signup" && /already registered|already exists|duplicate|unique/i.test(message)) {
+    return new Error("Ce numéro est déjà associé à un compte. Connectez-vous avec ce numéro au lieu de créer un second compte.");
+  }
+  if (action === "signin" && /invalid login credentials|invalid credentials/i.test(message)) {
+    return new Error("Numéro ou mot de passe incorrect. Vérifiez vos informations puis réessayez.");
+  }
+  return error instanceof Error ? error : new Error("Une erreur d’authentification est survenue.");
+}
+
 export async function signUpWithPhoneAndPassword(payload: { phone: string; password: string; firstName: string; lastName: string; city: string }) {
   const normalizedPhone = normalizePhoneNumber(payload.phone);
   const { data, error } = await requireSupabaseClient().auth.signUp({
@@ -132,7 +143,7 @@ export async function signUpWithPhoneAndPassword(payload: { phone: string; passw
       },
     },
   });
-  if (error) throw error;
+  if (error) throw toMarketplaceAuthError(error, "signup");
   if (!data.session) throw new Error("Le compte a été créé, mais la session n’a pas été ouverte. Réessayez de vous connecter.");
   return data;
 }
@@ -143,7 +154,7 @@ export async function signInWithPhoneAndPassword(phone: string, password: string
     email: internalLoginEmail(normalizedPhone),
     password,
   });
-  if (error) throw error;
+  if (error) throw toMarketplaceAuthError(error, "signin");
   if (!data.session) throw new Error("Connexion impossible : aucune session active n’a été créée.");
   return data;
 }

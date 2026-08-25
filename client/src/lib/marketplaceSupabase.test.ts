@@ -16,6 +16,7 @@ import {
   setPortableFavorite,
   signInWithPhoneAndPassword,
   signUpWithPhoneAndPassword,
+  toMarketplaceAuthError,
   searchPortableListings,
   unfollowPortableSeller,
 } from "./marketplaceSupabase";
@@ -140,6 +141,11 @@ describe("adaptateurs Supabase des pages publiques", () => {
 
 
 describe("authentification par téléphone sans SMS", () => {
+  it("explique clairement qu’un numéro déjà associé doit se reconnecter", () => {
+    expect(toMarketplaceAuthError(new Error("User already registered"), "signup").message).toContain("déjà associé");
+    expect(toMarketplaceAuthError(new Error("Invalid login credentials"), "signin").message).toContain("incorrect");
+  });
+
   it("utilise le même identifiant interne après normalisation du numéro", async () => {
     const signUp = vi.fn().mockResolvedValue({ data: { session: { access_token: "signup-token" } }, error: null });
     const signInWithPassword = vi.fn().mockResolvedValue({ data: { session: { access_token: "login-token" } }, error: null });
