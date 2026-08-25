@@ -92,6 +92,13 @@ export const reviews = mysqlTable("reviews", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, table => [uniqueIndex("review_unique_interaction").on(table.fromUserId, table.toUserId, table.conversationId), index("review_recipient_idx").on(table.toUserId)]);
 
+export const sellerFollows = mysqlTable("sellerFollows", {
+  id: int("id").autoincrement().primaryKey(),
+  followerId: int("followerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sellerId: int("sellerId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [uniqueIndex("seller_follow_unique").on(table.followerId, table.sellerId), index("seller_follow_seller_idx").on(table.sellerId)]);
+
 export const notifications = mysqlTable("notifications", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),

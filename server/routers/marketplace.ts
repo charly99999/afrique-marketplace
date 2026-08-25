@@ -108,6 +108,17 @@ export const marketplaceRouter = router({
       };
     }),
   }),
+  follows: router({
+    status: protectedProcedure.input(z.object({ sellerId: z.number().int().positive() })).query(({ ctx, input }) => db.isFollowingSeller(ctx.user.id, input.sellerId)),
+    follow: protectedProcedure.input(z.object({ sellerId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.id === input.sellerId) throw new TRPCError({ code: "BAD_REQUEST", message: "Vous ne pouvez pas suivre votre propre profil." });
+      const seller = await db.getPublicSellerProfile(input.sellerId);
+      if (!seller) throw new TRPCError({ code: "NOT_FOUND", message: "Ce vendeur n’est pas disponible au suivi." });
+      return db.followSeller(ctx.user.id, input.sellerId);
+    }),
+    unfollow: protectedProcedure.input(z.object({ sellerId: z.number().int().positive() })).mutation(({ ctx, input }) => db.unfollowSeller(ctx.user.id, input.sellerId)),
+    mine: protectedProcedure.query(({ ctx }) => db.getFollowedSellers(ctx.user.id)),
+  }),
   verification: router({
     mine: protectedProcedure.query(async ({ ctx }) => {
       const verification = await db.getLatestVerification(ctx.user.id);

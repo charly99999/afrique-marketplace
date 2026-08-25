@@ -99,3 +99,7 @@
 - [x] Définir une projection publique du vendeur qui expose uniquement les informations autorisées et ses annonces publiées.
 - [x] Créer une page vendeur partageable et lier les cartes vendeur des annonces à cette page.
 - [x] Tester les accès publics, la confidentialité des coordonnées et le rendu web/Android de la page vendeur.
+- [x] Créer le modèle de suivi entre membres et vendeurs, avec interdiction de s’auto-suivre et de suivre un profil non vérifié.
+- [x] Ajouter les actions suivre/ne plus suivre à la page publique de vendeur et un état fiable du suivi.
+- [x] Afficher les vendeurs suivis dans l’espace membre avec états vide, chargement et erreur.
+- [x] Tester les autorisations de suivi et les vues web/Android associées.

@@ -8,6 +8,10 @@ const { dbMock, analyzeVerificationWithAiMock } = vi.hoisted(() => ({
     getListingsForUser: vi.fn(),
     getPublicSellerProfile: vi.fn(),
     getListingsForPublicSeller: vi.fn(),
+    isFollowingSeller: vi.fn(),
+    followSeller: vi.fn(),
+    unfollowSeller: vi.fn(),
+    getFollowedSellers: vi.fn(),
     getLatestVerification: vi.fn(),
     getVerificationDossier: vi.fn(),
     saveAiVerificationReview: vi.fn(),
@@ -71,6 +75,22 @@ describe("flux métier marketplace", () => {
   it("ne rend pas public un profil vendeur non vérifié", async () => {
     dbMock.getPublicSellerProfile.mockResolvedValueOnce(undefined);
     await expect(caller().sellers.detail({ userId: 23 })).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("interdit de suivre son propre profil et un vendeur non vérifié", async () => {
+    await expect(caller().follows.follow({ sellerId: 11 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    dbMock.getPublicSellerProfile.mockResolvedValueOnce(undefined);
+    await expect(caller().follows.follow({ sellerId: 23 })).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("permet de suivre un vendeur vérifié puis de retrouver sa sélection", async () => {
+    dbMock.getPublicSellerProfile.mockResolvedValueOnce({ userId: 22, verificationStatus: "verified" });
+    dbMock.followSeller.mockResolvedValueOnce({ following: true });
+    dbMock.getFollowedSellers.mockResolvedValueOnce([{ userId: 22, firstName: "Awa", lastName: "Traoré", verificationStatus: "verified" }]);
+
+    await expect(caller().follows.follow({ sellerId: 22 })).resolves.toEqual({ following: true });
+    expect(dbMock.followSeller).toHaveBeenCalledWith(11, 22);
+    await expect(caller().follows.mine()).resolves.toMatchObject([{ userId: 22, firstName: "Awa", verificationStatus: "verified" }]);
   });
 
   it("crée un message et une alerte pour le destinataire", async () => {

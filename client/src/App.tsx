@@ -11,12 +11,13 @@ import ListingDetail from "./pages/ListingDetail";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
+import FollowedSellers from "./pages/FollowedSellers";
 import Sell from "./pages/Sell";
 import SellerProfile from "./pages/SellerProfile";
 import Verification from "./pages/Verification";
 
 function Router() {
-  return <Switch><Route path="/" component={Home} /><Route path="/compte" component={Account} /><Route path="/annonces" component={Listings} /><Route path="/annonce/:id">{params => <ListingDetail id={params.id} />}</Route><Route path="/vendeur/:id">{params => <SellerProfile id={params.id} />}</Route><Route path="/profil" component={Profile} /><Route path="/verification" component={Verification} /><Route path="/vendre" component={Sell} /><Route path="/messages" component={Messages} /><Route path="/administration" component={Admin} /><Route path="/404" component={NotFound} /><Route component={NotFound} /></Switch>;
+  return <Switch><Route path="/" component={Home} /><Route path="/compte" component={Account} /><Route path="/annonces" component={Listings} /><Route path="/annonce/:id">{params => <ListingDetail id={params.id} />}</Route><Route path="/vendeur/:id">{params => <SellerProfile id={params.id} />}</Route><Route path="/profil" component={Profile} /><Route path="/suivis" component={FollowedSellers} /><Route path="/verification" component={Verification} /><Route path="/vendre" component={Sell} /><Route path="/messages" component={Messages} /><Route path="/administration" component={Admin} /><Route path="/404" component={NotFound} /><Route component={NotFound} /></Switch>;
 }
 
 function App() {

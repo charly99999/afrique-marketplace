@@ -8,6 +8,7 @@ import {
   notifications,
   profiles,
   reviews,
+  sellerFollows,
   users,
   verifications,
 } from "../drizzle/schema";
@@ -220,6 +221,43 @@ export async function getListingsForPublicSeller(userId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(listings).where(and(eq(listings.userId, userId), eq(listings.status, "published"))).orderBy(desc(listings.createdAt)).limit(30);
+}
+
+export async function isFollowingSeller(followerId: number, sellerId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.select({ id: sellerFollows.id }).from(sellerFollows).where(and(eq(sellerFollows.followerId, followerId), eq(sellerFollows.sellerId, sellerId))).limit(1);
+  return Boolean(result[0]);
+}
+
+export async function followSeller(followerId: number, sellerId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const alreadyFollowing = await isFollowingSeller(followerId, sellerId);
+  if (!alreadyFollowing) await db.insert(sellerFollows).values({ followerId, sellerId });
+  return { following: true };
+}
+
+export async function unfollowSeller(followerId: number, sellerId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(sellerFollows).where(and(eq(sellerFollows.followerId, followerId), eq(sellerFollows.sellerId, sellerId)));
+  return { following: false };
+}
+
+export async function getFollowedSellers(followerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    userId: profiles.userId,
+    firstName: profiles.firstName,
+    lastName: profiles.lastName,
+    city: profiles.city,
+    businessCategory: profiles.businessCategory,
+    profilePhotoKey: profiles.profilePhotoKey,
+    verificationStatus: profiles.verificationStatus,
+    followedAt: sellerFollows.createdAt,
+  }).from(sellerFollows).innerJoin(profiles, eq(sellerFollows.sellerId, profiles.userId)).where(and(eq(sellerFollows.followerId, followerId), eq(profiles.verificationStatus, "verified"))).orderBy(desc(sellerFollows.createdAt)).limit(50);
 }
 
 export async function findOrCreateConversation(buyerId: number, sellerId: number, listingId?: number) {

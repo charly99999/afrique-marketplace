@@ -1,5 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Bell, CircleUserRound, MessageCircle, Plus, Search, ShieldCheck } from "lucide-react";
+import { Bell, CircleUserRound, Heart, MessageCircle, Plus, Search, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { BrandMark } from "./BrandMark";
@@ -22,6 +22,7 @@ export function MarketplaceShell({ children, title, action }: MarketplaceShellPr
             <Link href="/" className={location === "/" ? "active" : ""}>Découvrir</Link>
             <Link href="/annonces" className={location === "/annonces" ? "active" : ""}>Annonces</Link>
             <Link href="/messages" className={location === "/messages" ? "active" : ""}>Messages</Link>
+            {isAuthenticated && <Link href="/suivis" className={location === "/suivis" ? "active" : ""}>Suivis</Link>}
           </nav>
           <div className="header-actions">
             {isAuthenticated ? (
@@ -51,7 +52,7 @@ export function MarketplaceShell({ children, title, action }: MarketplaceShellPr
         <Link href="/" className={location === "/" ? "active" : ""}><Search size={19} /><span>Explorer</span></Link>
         <Link href="/annonces" className={location === "/annonces" ? "active" : ""}><ShieldCheck size={19} /><span>Annonces</span></Link>
         <Link href="/vendre" className="mobile-dock__create" aria-label="Publier une annonce"><Plus size={22} /></Link>
-        <Link href="/messages" className={location === "/messages" ? "active" : ""}><MessageCircle size={19} /><span>Messages</span></Link>
+        <Link href="/suivis" className={location === "/suivis" ? "active" : ""}><Heart size={19} /><span>Suivis</span></Link>
         <Link href="/profil" className={location === "/profil" ? "active" : ""}><CircleUserRound size={19} /><span>Profil</span></Link>
       </nav>
     </div>
