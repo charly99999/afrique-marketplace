@@ -166,3 +166,7 @@
 - [ ] Configurer l’identité visuelle Android, les permissions caméra/fichiers et les liens téléphoniques sans exposer les preuves privées.
 - [ ] Compiler et vérifier un APK de test ainsi que les parcours Android sensibles avec le backend Supabase en ligne.
 - [x] Documenter la génération APK/AAB, la signature privée et les limites de fonctionnement hors connexion.
+- [x] Préparer une variante Android release reliée à Supabase, distincte de l’APK debug, avec version et identifiant de production.
+- [x] Configurer une signature Android release privée hors GitHub et produire un APK/AAB de distribution.
+- [x] Vérifier les conditions de publication Google Play et documenter que la mise en ligne nécessite le compte développeur du propriétaire.
+

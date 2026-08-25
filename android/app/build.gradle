@@ -16,9 +16,27 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    def releaseKeystorePath = System.getenv('ANDROID_RELEASE_KEYSTORE_PATH')
+    def releaseKeystorePassword = System.getenv('ANDROID_RELEASE_KEYSTORE_PASSWORD')
+    def releaseSigningReady = releaseKeystorePath && releaseKeystorePassword
+
+    signingConfigs {
+        release {
+            if (releaseSigningReady) {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseKeystorePassword
+                keyAlias 'afrique-marketplace'
+                keyPassword releaseKeystorePassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            if (releaseSigningReady) {
+                signingConfig signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
