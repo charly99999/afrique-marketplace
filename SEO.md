@@ -8,7 +8,7 @@ Les moteurs de recherche peuvent découvrir exclusivement l’accueil et le cata
 
 ## Étape propriétaire : Google Search Console
 
-Le propriétaire doit ajouter et vérifier la propriété `https://afrique-marketplace.vercel.app` dans [Google Search Console][1], puis soumettre `https://afrique-marketplace.vercel.app/sitemap.xml`. Google indique que Search Console permet de soumettre des sitemaps et des URL individuelles à l’exploration ; l’indexation reste toutefois à sa discrétion. [1] [2]
+La propriété de préfixe d’URL `https://afrique-marketplace.vercel.app/` est en cours de validation. Le fichier HTML émis par Google est publié de manière persistante à la racine publique ; il ne doit pas être supprimé après validation. La prochaine action consiste à valider la propriété dans [Google Search Console][1], puis à soumettre `https://afrique-marketplace.vercel.app/sitemap.xml`. Google indique que Search Console permet de soumettre des sitemaps et des URL individuelles à l’exploration ; l’indexation reste toutefois à sa discrétion. [1] [2]
 
 Un domaine personnalisé devra remplacer l’adresse `vercel.app` avant toute campagne de visibilité importante. À ce moment, il faudra remplacer l’origine dans `client/src/lib/seo.ts`, `client/public/robots.txt` et `client/public/sitemap.xml`, puis ajouter le nouveau domaine comme propriété Search Console.
 

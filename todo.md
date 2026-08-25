@@ -161,3 +161,4 @@
 - [x] Définir les routes publiques indexables et exclure explicitement compte, messagerie, profil, vérification, administration et preuves privées du référencement.
 - [x] Publier un robots.txt, un sitemap XML des routes publiques et des métadonnées de base SEO sans inclure de données privées.
 - [x] Vérifier sur Vercel les réponses robots.txt et sitemap.xml, puis documenter la soumission du domaine dans Google Search Console.
+- [ ] Publier le fichier de validation Google, vérifier la propriété Search Console et soumettre le sitemap public de production.
