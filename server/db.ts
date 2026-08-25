@@ -266,6 +266,7 @@ export function buildFollowerListingNotifications(followerIds: number[], sellerI
     type: "system" as const,
     title: "Nouvelle annonce d’un vendeur suivi",
     body: `Une nouvelle annonce est disponible : ${listing.title}`,
+    linkPath: `/annonce/${listing.id}`,
   }));
 }
 

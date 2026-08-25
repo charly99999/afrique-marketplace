@@ -1,11 +1,13 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { MarketplaceShell } from "@/components/MarketplaceShell";
 import { NotificationAlertItem } from "@/components/NotificationAlertItem";
+import { openNotificationDestination } from "@/lib/notificationNavigation";
 import { QueryErrorState } from "@/components/QueryErrorState";
 import { trpc } from "@/lib/trpc";
 import { Bell, MessageCircle, Star } from "lucide-react";
 import React from "react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 export default function Messages() {
   const { isAuthenticated } = useAuth();
@@ -17,11 +19,13 @@ export default function Messages() {
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [, navigate] = useLocation();
   const reply = trpc.marketplace.conversations.reply.useMutation({ onSuccess: () => { setBody(""); if (selected) messages.refetch(); } });
   const leaveReview = trpc.marketplace.reviews.leave.useMutation({ onSuccess: () => { setReviewComment(""); setReviewOpen(false); } });
   const markRead = trpc.marketplace.notifications.markRead.useMutation({ onSuccess: () => alerts.refetch() });
 
-  const alertContent = alerts.error ? <QueryErrorState message="Les alertes sont indisponibles pour le moment." onRetry={() => alerts.refetch()} /> : alerts.data?.length ? alerts.data.map(item => <NotificationAlertItem key={item.id} item={item} onOpen={notificationId => markRead.mutate({ notificationId })} />) : <div className="inbox-empty">Vous recevrez ici les nouvelles importantes.</div>;
+  const openAlert = (item: { id: number; readAt: Date | null; linkPath: string | null }) => openNotificationDestination(item, { markRead: (notificationId, callbacks) => markRead.mutate({ notificationId }, callbacks), navigate });
+  const alertContent = alerts.error ? <QueryErrorState message="Les alertes sont indisponibles pour le moment." onRetry={() => alerts.refetch()} /> : alerts.data?.length ? alerts.data.map(item => <NotificationAlertItem key={item.id} item={item} onOpen={openAlert} />) : <div className="inbox-empty">Vous recevrez ici les nouvelles importantes.</div>;
 
   if (!isAuthenticated) return <MarketplaceShell title="Messages"><section className="page-wrap section-space"><div className="gate-card"><MessageCircle size={28} /><h2>Vos échanges sont protégés.</h2><p>Connectez-vous pour retrouver vos conversations et les alertes qui vous concernent.</p></div></section></MarketplaceShell>;
 

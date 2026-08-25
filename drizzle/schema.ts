@@ -105,6 +105,7 @@ export const notifications = mysqlTable("notifications", {
   type: mysqlEnum("type", ["message", "verification", "review", "system"]).notNull(),
   title: varchar("title", { length: 160 }).notNull(),
   body: text("body").notNull(),
+  linkPath: varchar("linkPath", { length: 255 }),
   readAt: timestamp("readAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, table => [index("notification_recipient_idx").on(table.userId, table.createdAt)]);

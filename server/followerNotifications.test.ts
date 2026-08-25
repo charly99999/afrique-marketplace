@@ -6,8 +6,8 @@ describe("alertes de nouvelles annonces pour abonnés", () => {
     const notifications = buildFollowerListingNotifications([7, 11, 7, 22], 11, { id: 83, title: "Toyota Yaris hybride" });
 
     expect(notifications).toEqual([
-      { userId: 7, type: "system", title: "Nouvelle annonce d’un vendeur suivi", body: "Une nouvelle annonce est disponible : Toyota Yaris hybride" },
-      { userId: 22, type: "system", title: "Nouvelle annonce d’un vendeur suivi", body: "Une nouvelle annonce est disponible : Toyota Yaris hybride" },
+      { userId: 7, type: "system", title: "Nouvelle annonce d’un vendeur suivi", body: "Une nouvelle annonce est disponible : Toyota Yaris hybride", linkPath: "/annonce/83" },
+      { userId: 22, type: "system", title: "Nouvelle annonce d’un vendeur suivi", body: "Une nouvelle annonce est disponible : Toyota Yaris hybride", linkPath: "/annonce/83" },
     ]);
     expect(notifications.find(notification => notification.userId === 11)).toBeUndefined();
   });

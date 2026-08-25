@@ -1,12 +1,15 @@
 import React from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { describe, expect, it, vi } from "vitest";
 
-const alert = { id: 77, userId: 11, type: "system", title: "Nouvelle annonce d’un vendeur suivi", body: "Une nouvelle annonce est disponible : Toyota Yaris hybride", readAt: null, createdAt: new Date() };
+(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+const { navigateMock, markReadMock } = vi.hoisted(() => ({ navigateMock: vi.fn(), markReadMock: vi.fn() }));
+const alert = { id: 77, userId: 11, type: "system", title: "Nouvelle annonce d’un vendeur suivi", body: "Une nouvelle annonce est disponible : Toyota Yaris hybride", linkPath: "/annonce/85", readAt: null, createdAt: new Date() };
 
 vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock("@/components/MarketplaceShell", () => ({ MarketplaceShell: ({ children, title }: { children: React.ReactNode; title?: string }) => <main aria-label={title}>{children}</main> }));
 vi.mock("@/components/QueryErrorState", () => ({ QueryErrorState: ({ message }: { message: string }) => <p>{message}</p> }));
+vi.mock("wouter", () => ({ useLocation: () => ["/messages", navigateMock] }));
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     marketplace: {
@@ -17,7 +20,7 @@ vi.mock("@/lib/trpc", () => ({
       },
       notifications: {
         list: { useQuery: () => ({ data: [alert] }) },
-        markRead: { useMutation: () => ({ mutate: vi.fn() }) },
+        markRead: { useMutation: () => ({ mutate: markReadMock }) },
       },
       reviews: { leave: { useMutation: () => ({ mutate: vi.fn() }) } },
     },
@@ -27,11 +30,19 @@ vi.mock("@/lib/trpc", () => ({
 import Messages from "./Messages";
 
 describe("Messages", () => {
-  it("affiche dans le flux complet l’alerte récupérée de nouvelle annonce suivie", () => {
-    const html = renderToStaticMarkup(<Messages />);
+  it("ouvre l’annonce après un vrai clic sur l’alerte et marque celle-ci comme lue", async () => {
+    markReadMock.mockReset();
+    navigateMock.mockReset();
+    markReadMock.mockImplementation((_input, callbacks) => callbacks?.onSuccess?.());
+    let renderer: ReactTestRenderer;
 
-    expect(html).toContain("Messages et alertes");
-    expect(html).toContain("Nouvelle annonce d’un vendeur suivi");
-    expect(html).toContain("Une nouvelle annonce est disponible : Toyota Yaris hybride");
+    await act(async () => { renderer = create(<Messages />); });
+    const alertButton = renderer!.root.findAll(node => node.type === "button" && String(node.props.className).includes("alert-item"))[0];
+    expect(alertButton).toBeDefined();
+
+    await act(async () => { alertButton.props.onClick(); });
+
+    expect(markReadMock).toHaveBeenCalledWith({ notificationId: 77 }, expect.objectContaining({ onSuccess: expect.any(Function), onError: expect.any(Function) }));
+    expect(navigateMock).toHaveBeenCalledWith("/annonce/85");
   });
 });

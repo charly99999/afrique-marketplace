@@ -113,7 +113,7 @@ describe("flux métier marketplace", () => {
   });
 
   it("retourne à un abonné l’alerte persistée de nouvelle annonce dans sa liste d’alertes", async () => {
-    const alert = { id: 77, userId: 11, type: "system", title: "Nouvelle annonce d’un vendeur suivi", body: "Une nouvelle annonce est disponible : Toyota Yaris hybride", readAt: null, createdAt: new Date() };
+    const alert = { id: 77, userId: 11, type: "system", title: "Nouvelle annonce d’un vendeur suivi", body: "Une nouvelle annonce est disponible : Toyota Yaris hybride", linkPath: "/annonce/85", readAt: null, createdAt: new Date() };
     dbMock.listNotifications.mockResolvedValueOnce([alert]);
 
     await expect(caller().notifications.list()).resolves.toEqual([alert]);

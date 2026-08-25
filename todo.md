@@ -111,3 +111,8 @@
 - [x] Ajouter une preuve de route que l’alerte de nouvelle annonce est consultable par l’abonné.
 - [x] Ajouter un test UI que l’alerte de nouvelle annonce affiche son titre et son contenu dans Messages.
 - [x] Ajouter un test de l’écran Messages complet alimenté par une alerte de nouvelle annonce suivie.
+- [x] Enregistrer une destination sécurisée vers l’annonce dans chaque alerte de nouvelle publication.
+- [x] Ouvrir l’annonce concernée depuis l’alerte et marquer l’alerte comme lue.
+- [x] Tester le lien, le marquage lu et le rendu des alertes ouvrables sur mobile et web.
+- [x] Ajouter un repli ouvrant l’annonce même si le marquage lu échoue, puis le couvrir par test.
+- [x] Ajouter un test intégré Messages couvrant le clic, le marquage lu et la navigation vers l’annonce.
