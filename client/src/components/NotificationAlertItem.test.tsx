@@ -21,4 +21,11 @@ describe("NotificationAlertItem", () => {
     (element.props as { onClick: () => void }).onClick();
     expect(onOpen).toHaveBeenCalledWith(item);
   });
+
+  it("autorise une destination d’annonce portable identifiée par UUID", () => {
+    const html = renderToStaticMarkup(<NotificationAlertItem item={{ id: "c2baecfb-737c-467d-936b-ef8cfa17dcb0", title: "Nouvelle annonce", body: "Une annonce est disponible.", linkPath: "/annonce/76026a01-3153-4726-a89e-645d43f704d5", readAt: "2026-08-25T10:00:00.000Z" }} onOpen={vi.fn()} />);
+
+    expect(html).toContain("Voir l’annonce");
+    expect(html).not.toContain("alert-item--unread");
+  });
 });

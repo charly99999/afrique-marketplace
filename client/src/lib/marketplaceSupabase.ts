@@ -153,6 +153,36 @@ export async function replyPortableConversation(conversationId: string, body: st
   if (error) throw error;
 }
 
+export async function leavePortableReview(payload: { conversationId: string; rating: number; comment: string }) {
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error("Connexion requise.");
+
+  const { data: conversation, error: conversationError } = await client
+    .from("am_conversations")
+    .select("buyer_id, seller_id")
+    .eq("id", payload.conversationId)
+    .maybeSingle();
+  if (conversationError) throw conversationError;
+  if (!conversation) throw new Error("Conversation introuvable.");
+
+  const recipientId = conversation.buyer_id === user.id ? conversation.seller_id : conversation.buyer_id;
+  const { data, error } = await client
+    .from("am_reviews")
+    .insert({
+      conversation_id: payload.conversationId,
+      from_user_id: user.id,
+      to_user_id: recipientId,
+      rating: payload.rating,
+      comment: payload.comment.trim(),
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function listPortableNotifications() {
   const { data, error } = await requireSupabaseClient().from("am_notifications").select("*").order("created_at", { ascending: false }).limit(50);
   if (error) throw error;

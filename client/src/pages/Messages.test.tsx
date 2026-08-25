@@ -1,5 +1,6 @@
 import React from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -34,9 +35,10 @@ describe("Messages", () => {
     markReadMock.mockReset();
     navigateMock.mockReset();
     markReadMock.mockImplementation((_input, callbacks) => callbacks?.onSuccess?.());
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     let renderer: ReactTestRenderer;
 
-    await act(async () => { renderer = create(<Messages />); });
+    await act(async () => { renderer = create(<QueryClientProvider client={queryClient}><Messages /></QueryClientProvider>); });
     const alertButton = renderer!.root.findAll(node => node.type === "button" && String(node.props.className).includes("alert-item"))[0];
     expect(alertButton).toBeDefined();
 
