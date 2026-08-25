@@ -260,6 +260,33 @@ export async function getFollowedSellers(followerId: number) {
   }).from(sellerFollows).innerJoin(profiles, eq(sellerFollows.sellerId, profiles.userId)).where(and(eq(sellerFollows.followerId, followerId), eq(profiles.verificationStatus, "verified"))).orderBy(desc(sellerFollows.createdAt)).limit(50);
 }
 
+export function buildFollowerListingNotifications(followerIds: number[], sellerId: number, listing: { id: number; title: string }) {
+  return Array.from(new Set(followerIds)).filter(followerId => followerId !== sellerId).map(followerId => ({
+    userId: followerId,
+    type: "system" as const,
+    title: "Nouvelle annonce d’un vendeur suivi",
+    body: `Une nouvelle annonce est disponible : ${listing.title}`,
+  }));
+}
+
+export async function persistFollowerListingNotifications(
+  notificationsToPersist: ReturnType<typeof buildFollowerListingNotifications>,
+  persistence: { insertNotifications: (rows: ReturnType<typeof buildFollowerListingNotifications>) => Promise<void> },
+) {
+  for (let index = 0; index < notificationsToPersist.length; index += 400) {
+    await persistence.insertNotifications(notificationsToPersist.slice(index, index + 400));
+  }
+}
+
+export async function notifyFollowersAboutListing(sellerId: number, listing: { id: number; title: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const followers = await db.select({ followerId: sellerFollows.followerId }).from(sellerFollows).where(eq(sellerFollows.sellerId, sellerId));
+  const recipients = buildFollowerListingNotifications(followers.map(({ followerId }) => followerId), sellerId, listing);
+  await persistFollowerListingNotifications(recipients, { insertNotifications: async rows => { await db.insert(notifications).values(rows); } });
+  return recipients.length;
+}
+
 export async function findOrCreateConversation(buyerId: number, sellerId: number, listingId?: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

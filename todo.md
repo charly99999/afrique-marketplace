@@ -103,3 +103,11 @@
 - [x] Ajouter les actions suivre/ne plus suivre à la page publique de vendeur et un état fiable du suivi.
 - [x] Afficher les vendeurs suivis dans l’espace membre avec états vide, chargement et erreur.
 - [x] Tester les autorisations de suivi et les vues web/Android associées.
+- [x] Identifier les abonnés actifs d’un vendeur vérifié et définir l’alerte de nouvelle annonce.
+- [x] Envoyer une notification aux abonnés lors de la publication, sans notifier le vendeur lui-même.
+- [x] Tester le ciblage, le contenu et l’affichage des notifications de nouvelles annonces.
+- [x] Ajouter une preuve automatisée du contenu, du dédoublonnage et de l’exclusion du vendeur dans les alertes de nouvelle annonce.
+- [x] Ajouter une preuve de persistance des alertes avant leur affichage dans Messages.
+- [x] Ajouter une preuve de route que l’alerte de nouvelle annonce est consultable par l’abonné.
+- [x] Ajouter un test UI que l’alerte de nouvelle annonce affiche son titre et son contenu dans Messages.
+- [x] Ajouter un test de l’écran Messages complet alimenté par une alerte de nouvelle annonce suivie.

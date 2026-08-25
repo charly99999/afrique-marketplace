@@ -4,6 +4,7 @@ import { resolveVerificationDecision } from "../shared/marketplace";
 const { dbMock, analyzeVerificationWithAiMock } = vi.hoisted(() => ({
   dbMock: {
     getProfile: vi.fn(),
+    createListing: vi.fn(),
     updateProfileDetails: vi.fn(),
     getListingsForUser: vi.fn(),
     getPublicSellerProfile: vi.fn(),
@@ -12,6 +13,7 @@ const { dbMock, analyzeVerificationWithAiMock } = vi.hoisted(() => ({
     followSeller: vi.fn(),
     unfollowSeller: vi.fn(),
     getFollowedSellers: vi.fn(),
+    notifyFollowersAboutListing: vi.fn(),
     getLatestVerification: vi.fn(),
     getVerificationDossier: vi.fn(),
     saveAiVerificationReview: vi.fn(),
@@ -19,6 +21,7 @@ const { dbMock, analyzeVerificationWithAiMock } = vi.hoisted(() => ({
     findOrCreateConversation: vi.fn(),
     createMessage: vi.fn(),
     createNotification: vi.fn(),
+    listNotifications: vi.fn(),
     reviewVerification: vi.fn(),
     moderateListing: vi.fn(),
   },
@@ -44,6 +47,15 @@ describe("flux métier marketplace", () => {
   it("empêche effectivement un profil non vérifié de publier", async () => {
     dbMock.getProfile.mockResolvedValueOnce({ verificationStatus: "pending" });
     await expect(caller().listings.create({ title: "Téléphone récent à vendre", description: "Appareil en bon état, avec chargeur et boîte d’origine.", category: "telephones", city: "Dakar", price: 250000, currency: "XOF", condition: "bon_etat", mediaData: [] })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("alerte les abonnés sans bloquer la publication d’un vendeur vérifié", async () => {
+    dbMock.getProfile.mockResolvedValueOnce({ verificationStatus: "verified" });
+    dbMock.createListing.mockResolvedValueOnce({ id: 55 });
+    dbMock.notifyFollowersAboutListing.mockResolvedValueOnce(2);
+
+    await expect(caller().listings.create({ title: "Téléphone récent à vendre", description: "Appareil en bon état, avec chargeur et boîte d’origine.", category: "telephones", city: "Dakar", price: 250000, currency: "XOF", condition: "bon_etat", mediaData: [] })).resolves.toEqual({ id: 55 });
+    expect(dbMock.notifyFollowersAboutListing).toHaveBeenCalledWith(11, { id: 55, title: "Téléphone récent à vendre" });
   });
 
   it("enregistre les informations professionnelles facultatives du membre connecté", async () => {
@@ -98,6 +110,14 @@ describe("flux métier marketplace", () => {
     await caller().conversations.send({ recipientId: 22, listingId: 7, body: "Bonjour, est-ce encore disponible ?" });
     expect(dbMock.createMessage).toHaveBeenCalledWith({ conversationId: 44, senderId: 11, body: "Bonjour, est-ce encore disponible ?" });
     expect(dbMock.createNotification).toHaveBeenCalledWith(expect.objectContaining({ userId: 22, type: "message", title: "Nouveau message" }));
+  });
+
+  it("retourne à un abonné l’alerte persistée de nouvelle annonce dans sa liste d’alertes", async () => {
+    const alert = { id: 77, userId: 11, type: "system", title: "Nouvelle annonce d’un vendeur suivi", body: "Une nouvelle annonce est disponible : Toyota Yaris hybride", readAt: null, createdAt: new Date() };
+    dbMock.listNotifications.mockResolvedValueOnce([alert]);
+
+    await expect(caller().notifications.list()).resolves.toEqual([alert]);
+    expect(dbMock.listNotifications).toHaveBeenCalledWith(11);
   });
 
   it("réserve les actions de modération à un administrateur", async () => {

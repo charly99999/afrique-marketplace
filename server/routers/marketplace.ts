@@ -166,7 +166,13 @@ export const marketplaceRouter = router({
       const profile = await db.getProfile(ctx.user.id);
       if (!canPublishWithVerification(profile?.verificationStatus)) throw new TRPCError({ code: "FORBIDDEN", message: "La vérification du profil est obligatoire avant toute publication" });
       const media = await Promise.all(input.mediaData.map(dataUrl => putPrivateFile(`listings/${ctx.user.id}`, dataUrl)));
-      return db.createListing({ userId: ctx.user.id, title: input.title, description: input.description, category: input.category, city: input.city, price: input.price.toFixed(2), currency: input.currency, condition: input.condition, media });
+      const listing = await db.createListing({ userId: ctx.user.id, title: input.title, description: input.description, category: input.category, city: input.city, price: input.price.toFixed(2), currency: input.currency, condition: input.condition, media });
+      try {
+        await db.notifyFollowersAboutListing(ctx.user.id, { id: listing.id, title: input.title });
+      } catch (error) {
+        console.error("[Followers] Notification unavailable:", error);
+      }
+      return listing;
     }),
     moderate: adminProcedure.input(z.object({ listingId: z.number().int().positive(), status: z.enum(moderationStatuses) })).mutation(({ input }) => db.moderateListing(input.listingId, input.status)),
   }),
