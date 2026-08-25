@@ -141,14 +141,16 @@
 - [x] Créer le projet Supabase dédié Afrique Marketplace, appliquer le schéma sécurisé et vérifier les protections initiales.
 - [x] Supprimer les requêtes d’authentification tRPC résiduelles du shell lorsque le mode Supabase est activé, puis revalider le catalogue compilé.
 - [ ] Déployer `verify-identity` seulement après configuration sécurisée de la clé IA externe dans Supabase, puis tester un dossier réel avec revue humaine de secours.
-- [ ] Raccorder l’écran Administration à ses opérations Supabase, puis exécuter les contrôles d’accès à deux comptes.
+- [ ] Exécuter les contrôles d’accès Supabase avec deux comptes réels, dont un compte administrateur, avant la bascule complète.
 - [x] Abandonner la configuration de publication Cloudflare Pages à la demande explicite du propriétaire, sans supprimer les artefacts portables déjà préparés.
 - [x] Enregistrer `GOOGLE_GENERATIVE_AI_API_KEY` comme secret chiffré Supabase et déployer `verify-identity` avec vérification JWT active.
 - [x] Créer le projet Vercel relié à GitHub, ajouter le build portable et vérifier qu’un déploiement HTTPS répond correctement.
 - [ ] Définir les variables publiques Supabase pour Preview et Production Vercel, puis revalider le build Vite portable avec le catalogue en mode Supabase.
+- [x] Ajouter un canal administratif Supabase sécurisé pour examiner les dossiers et modérer les annonces sans donner au navigateur un accès direct aux documents privés.
 - [x] Retirer le script d’analytique Manus non configuré du build portable Vercel, puis revalider le journal de compilation distant.
 - [x] Raccorder l’écran Messages aux conversations, messages, alertes et avis Supabase en mode portable tout en préservant le parcours tRPC legacy.
 - [x] Raccorder l’écran Profil à son profil, ses annonces et sa couverture Supabase en mode portable tout en préservant le parcours tRPC legacy.
 - [x] Raccorder l’écran Publier à la création d’annonces et au stockage de médias Supabase en mode portable tout en préservant le parcours tRPC legacy.
 - [x] Raccorder l’écran Suivis aux profils publics vérifiés Supabase en mode portable tout en préservant le parcours tRPC legacy.
 - [x] Raccorder l’écran Vérification au stockage privé Supabase et à la fonction Edge JWT en mode portable tout en préservant le parcours tRPC legacy.
+- [x] Raccorder l’écran Administration à la fonction Edge Supabase JWT, avec URLs temporaires des preuves et contrôle de rôle côté serveur.

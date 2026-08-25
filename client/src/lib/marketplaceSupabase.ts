@@ -388,3 +388,39 @@ export async function markPortableNotificationRead(notificationId: string) {
   const { error } = await requireSupabaseClient().from("am_notifications").update({ read_at: new Date().toISOString() }).eq("id", notificationId);
   if (error) throw error;
 }
+
+export type PortableAdminOverview = { users: number; pendingVerifications: number; listings: number; flaggedContent: number };
+export type PortableAdminVerification = { id: string; userId: string; documentType: string; aiReview: unknown; aiReviewedAt: string | null; createdAt: string; firstName: string; lastName: string; phone: string; city: string; documentKey?: string; selfieKey?: string };
+export type PortableAdminListing = { id: string; title: string; category: string; city: string; status: "published" | "hidden" | "removed" };
+
+async function portableAdminRequest<T>(action: string, payload: Record<string, unknown> = {}) {
+  const { data, error } = await requireSupabaseClient().functions.invoke("admin-marketplace", { body: { action, ...payload } });
+  if (error) throw error;
+  if (data?.error) throw new Error(String(data.error));
+  return data as T;
+}
+
+export function getPortableAdminOverview() {
+  return portableAdminRequest<PortableAdminOverview>("overview");
+}
+
+export function listPortableAdminPendingVerifications() {
+  return portableAdminRequest<PortableAdminVerification[]>("pending");
+}
+
+export function listPortableAdminListings() {
+  return portableAdminRequest<PortableAdminListing[]>("listings");
+}
+
+export async function getPortableAdminProofUrl(verificationId: string, proof: "document" | "selfie") {
+  const result = await portableAdminRequest<{ url: string }>("proof-url", { verificationId, proof });
+  return result.url;
+}
+
+export function reviewPortableVerification(payload: { verificationId: string; decision: "approved" | "rejected"; note: string; confirmedConsistent: boolean }) {
+  return portableAdminRequest<{ status: "approved" | "rejected" }>("review", payload);
+}
+
+export function moderatePortableListing(payload: { listingId: string; status: "published" | "hidden" | "removed" }) {
+  return portableAdminRequest<{ status: "published" | "hidden" | "removed" }>("moderate", payload);
+}
