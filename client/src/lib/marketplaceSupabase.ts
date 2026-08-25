@@ -1,4 +1,5 @@
 import { requireSupabaseClient } from "./supabaseClient";
+import { internalLoginEmail, normalizePhoneNumber } from "./phoneAuth";
 
 export type PortableListingFilters = { query?: string; category?: string; city?: string; condition?: string };
 
@@ -118,18 +119,32 @@ export async function getPortableSession() {
 }
 
 export async function signUpWithPhoneAndPassword(payload: { phone: string; password: string; firstName: string; lastName: string; city: string }) {
+  const normalizedPhone = normalizePhoneNumber(payload.phone);
   const { data, error } = await requireSupabaseClient().auth.signUp({
-    phone: payload.phone,
+    email: internalLoginEmail(normalizedPhone),
     password: payload.password,
-    options: { data: { first_name: payload.firstName, last_name: payload.lastName, city: payload.city } },
+    options: {
+      data: {
+        first_name: payload.firstName.trim(),
+        last_name: payload.lastName.trim(),
+        phone: normalizedPhone,
+        city: payload.city.trim(),
+      },
+    },
   });
   if (error) throw error;
+  if (!data.session) throw new Error("Le compte a été créé, mais la session n’a pas été ouverte. Réessayez de vous connecter.");
   return data;
 }
 
 export async function signInWithPhoneAndPassword(phone: string, password: string) {
-  const { data, error } = await requireSupabaseClient().auth.signInWithPassword({ phone, password });
+  const normalizedPhone = normalizePhoneNumber(phone);
+  const { data, error } = await requireSupabaseClient().auth.signInWithPassword({
+    email: internalLoginEmail(normalizedPhone),
+    password,
+  });
   if (error) throw error;
+  if (!data.session) throw new Error("Connexion impossible : aucune session active n’a été créée.");
   return data;
 }
 

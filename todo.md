@@ -179,3 +179,9 @@
 
 - [x] Corriger la référence cassée du logo dans l’en-tête mobile et vérifier toutes les références de marque web, PWA et Android.
 - [x] Recompiler, tester et publier la nouvelle release après correction du logo d’en-tête.
+- [ ] Diagnostiquer pourquoi un compte nouvellement inscrit ne peut pas se reconnecter avec son téléphone et son mot de passe en production.
+- [ ] Vérifier la persistance des comptes et les règles d’accès Supabase sans exposer de données sensibles.
+- [ ] Ajouter une régression automatisée du cycle inscription puis connexion et publier le correctif si nécessaire.
+- [ ] Configurer l’authentification téléphone comme identifiant avec mot de passe, sans confirmation SMS ni fournisseur SMS obligatoire.
+- [ ] Normaliser les numéros saisis avec indicatif pays afin que l’inscription et la reconnexion utilisent la même valeur.
+- [ ] Afficher une erreur claire lorsque l’inscription ou la connexion ne crée pas de session persistante.

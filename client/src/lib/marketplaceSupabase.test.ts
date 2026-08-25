@@ -11,6 +11,8 @@ import {
   getPortableFollowStatus,
   getPortableListingDetail,
   getPortableSellerProfile,
+  signInWithPhoneAndPassword,
+  signUpWithPhoneAndPassword,
   unfollowPortableSeller,
 } from "./marketplaceSupabase";
 
@@ -129,5 +131,25 @@ describe("adaptateurs Supabase des pages publiques", () => {
     expect(insert).toHaveBeenCalledWith({ follower_id: "buyer-uuid", seller_id: "seller-uuid" });
     expect(deleteFilter).toHaveBeenCalledWith("follower_id", "buyer-uuid");
     expect(deleteSellerFilter).toHaveBeenCalledWith("seller_id", "seller-uuid");
+  });
+});
+
+
+describe("authentification par téléphone sans SMS", () => {
+  it("utilise le même identifiant interne après normalisation du numéro", async () => {
+    const signUp = vi.fn().mockResolvedValue({ data: { session: { access_token: "signup-token" } }, error: null });
+    const signInWithPassword = vi.fn().mockResolvedValue({ data: { session: { access_token: "login-token" } }, error: null });
+    state.client = { auth: { signUp, signInWithPassword } };
+
+    await expect(signUpWithPhoneAndPassword({ phone: "0565 24 23 49", password: "different-test-password", firstName: "Awa", lastName: "Kone", city: "Abidjan" })).resolves.toMatchObject({ session: { access_token: "signup-token" } });
+    await expect(signInWithPhoneAndPassword("+225 05 65 24 23 49", "different-test-password")).resolves.toMatchObject({ session: { access_token: "login-token" } });
+
+    expect(signUp).toHaveBeenCalledWith(expect.objectContaining({ email: "phone-2250565242349@accounts.afrique-marketplace.internal", password: "different-test-password", options: { data: expect.objectContaining({ phone: "+2250565242349" }) } }));
+    expect(signInWithPassword).toHaveBeenCalledWith({ email: "phone-2250565242349@accounts.afrique-marketplace.internal", password: "different-test-password" });
+  });
+
+  it("signale un compte non ouvert si Supabase ne renvoie pas de session", async () => {
+    state.client = { auth: { signUp: vi.fn().mockResolvedValue({ data: { session: null, user: { id: "pending-user" } }, error: null }), signInWithPassword: vi.fn() } };
+    await expect(signUpWithPhoneAndPassword({ phone: "+2250565242349", password: "different-test-password", firstName: "Awa", lastName: "Kone", city: "Abidjan" })).rejects.toThrow("session n’a pas été ouverte");
   });
 });
