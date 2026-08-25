@@ -18,6 +18,23 @@ export type PortableListing = {
   updatedAt: string;
 };
 
+export type PortableProfile = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  city: string;
+  bio: string;
+  businessCategory: string;
+  businessHours: string;
+  address: string;
+  website: string;
+  contactEmail: string;
+  profilePhotoKey: string | null;
+  coverPhotoKey: string | null;
+  verificationStatus: "required" | "pending" | "verified" | "rejected";
+};
+
 function normalizeListing(row: Record<string, unknown>): PortableListing {
   return {
     id: String(row.id),
@@ -33,6 +50,25 @@ function normalizeListing(row: Record<string, unknown>): PortableListing {
     status: row.status as PortableListing["status"],
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
+  };
+}
+
+function normalizeProfile(row: Record<string, unknown>): PortableProfile {
+  return {
+    id: String(row.id),
+    firstName: String(row.first_name ?? ""),
+    lastName: String(row.last_name ?? ""),
+    phone: String(row.phone ?? ""),
+    city: String(row.city ?? ""),
+    bio: String(row.bio ?? ""),
+    businessCategory: String(row.business_category ?? ""),
+    businessHours: String(row.business_hours ?? ""),
+    address: String(row.address ?? ""),
+    website: String(row.website ?? ""),
+    contactEmail: String(row.contact_email ?? ""),
+    profilePhotoKey: row.profile_photo_path ? String(row.profile_photo_path) : null,
+    coverPhotoKey: row.cover_photo_path ? String(row.cover_photo_path) : null,
+    verificationStatus: (row.verification_status ?? "required") as PortableProfile["verificationStatus"],
   };
 }
 
@@ -70,7 +106,7 @@ export async function getMyPortableProfile() {
   if (!user) return null;
   const { data, error } = await client.from("am_profiles").select("*").eq("id", user.id).maybeSingle();
   if (error) throw error;
-  return data;
+  return data ? normalizeProfile(data as Record<string, unknown>) : null;
 }
 
 export async function updateMyPortableProfile(details: { bio?: string; businessCategory?: string; businessHours?: string; address?: string; website?: string; contactEmail?: string }) {
@@ -86,7 +122,38 @@ export async function updateMyPortableProfile(details: { bio?: string; businessC
     contact_email: details.contactEmail ?? null,
   }).eq("id", user.id).select().single();
   if (error) throw error;
-  return data;
+  return normalizeProfile(data as Record<string, unknown>);
+}
+
+export async function listMyPortableListings() {
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) return [];
+  const { data, error } = await client.from("am_listings").select("*").eq("owner_id", user.id).order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(item => normalizeListing(item as Record<string, unknown>));
+}
+
+export function portableMediaUrl(path: string | null | undefined) {
+  if (!path) return "";
+  return requireSupabaseClient().storage.from("marketplace-media").getPublicUrl(path).data.publicUrl;
+}
+
+export async function uploadMyPortableCover(file: File) {
+  if (!file.type.startsWith("image/")) throw new Error("Choisissez une image de couverture valide.");
+  if (file.size > 5 * 1024 * 1024) throw new Error("La couverture est trop lourde. Choisissez une image de 5 Mo maximum.");
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error("Connexion requise.");
+  const extension = file.name.split(".").pop()?.replace(/[^a-z0-9]/gi, "") || "jpg";
+  const path = `${user.id}/covers/${crypto.randomUUID()}.${extension}`;
+  const { error: uploadError } = await client.storage.from("marketplace-media").upload(path, file, { contentType: file.type, upsert: false });
+  if (uploadError) throw uploadError;
+  const { data, error } = await client.from("am_profiles").update({ cover_photo_path: path }).eq("id", user.id).select().single();
+  if (error) throw error;
+  return normalizeProfile(data as Record<string, unknown>);
 }
 
 export async function searchPortableListings(filters: PortableListingFilters) {
