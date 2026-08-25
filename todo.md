@@ -197,3 +197,12 @@
 - [x] Ajouter un bouton Déconnexion visible dans l’espace membre web et Android.
 - [x] Vérifier que la session est invalidée et que l’utilisateur revient à Compte après déconnexion.
 - [x] Ajouter un test de régression du bouton Déconnexion et publier la correction.
+- [ ] Auditer le parcours acheteur : recherche, filtres, détail, contact, favoris et retour au catalogue.
+- [ ] Auditer le parcours vendeur : création, édition, photos/vidéos, statut, visibilité et gestion des annonces.
+- [ ] Auditer la confiance marketplace : profil vérifié, avis authentiques, signalement, modération et confidentialité.
+- [ ] Auditer la messagerie : démarrage depuis une annonce, isolation des conversations, notifications et états d’erreur.
+- [ ] Auditer la persistance Supabase, les politiques RLS, les médias privés/publics et les erreurs de synchronisation.
+- [ ] Identifier et prioriser les lacunes critiques avant d’ajouter des fonctions non nécessaires.
+- [ ] Implémenter les améliorations marketplace prioritaires retenues après audit.
+- [ ] Ajouter les tests unitaires et d’intégration couvrant chaque amélioration marketplace.
+- [ ] Revalider web, Android, responsive, build et publication après les améliorations.

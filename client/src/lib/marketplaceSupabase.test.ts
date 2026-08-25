@@ -8,9 +8,12 @@ vi.mock("./supabaseClient", () => ({
 
 import {
   followPortableSeller,
+  getPortableFavoriteStatus,
   getPortableFollowStatus,
   getPortableListingDetail,
   getPortableSellerProfile,
+  reportPortableListing,
+  setPortableFavorite,
   signInWithPhoneAndPassword,
   signUpWithPhoneAndPassword,
   searchPortableListings,
@@ -178,5 +181,39 @@ describe("visibilité publique du catalogue", () => {
     expect(listings[0].userId).toBe("other-user");
     expect(chain.eq).toHaveBeenCalledWith("status", "published");
     expect(chain.or).toHaveBeenCalledWith("title.ilike.%Appartement%,description.ilike.%Appartement%");
+  });
+});
+
+
+describe("sécurité marketplace : favoris et signalements", () => {
+  it("limite le favori au membre connecté et permet sa suppression", async () => {
+    const favoriteLookup = maybeSingle({ listing_id: "listing-uuid" });
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const deleteChain = { eq: vi.fn(), then: undefined as unknown };
+    deleteChain.eq.mockReturnValueOnce(deleteChain).mockReturnValueOnce(Promise.resolve({ error: null }));
+    const deleteListing = vi.fn().mockReturnValue(deleteChain);
+    const chain = { eq: vi.fn(), maybeSingle: favoriteLookup };
+    chain.eq.mockReturnValue(chain);
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "buyer-uuid" } }, error: null }) },
+      from: vi.fn(() => ({ select: vi.fn(() => chain), upsert, delete: deleteListing })),
+    };
+
+    await expect(getPortableFavoriteStatus("listing-uuid")).resolves.toBe(true);
+    await expect(setPortableFavorite("listing-uuid", true)).resolves.toBe(true);
+    await expect(setPortableFavorite("listing-uuid", false)).resolves.toBe(false);
+    expect(upsert).toHaveBeenCalledWith({ listing_id: "listing-uuid", user_id: "buyer-uuid" }, { onConflict: "listing_id,user_id" });
+    expect(deleteListing).toHaveBeenCalledOnce();
+  });
+
+  it("transmet un signalement avec un motif et des précisions bornées", async () => {
+    const insert = vi.fn().mockResolvedValue({ error: null });
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "buyer-uuid" } }, error: null }) },
+      from: vi.fn(() => ({ insert })),
+    };
+
+    await expect(reportPortableListing({ listingId: "listing-uuid", reason: "inaccurate", details: "Le prix affiché ne correspond pas à la description." })).resolves.toBeUndefined();
+    expect(insert).toHaveBeenCalledWith({ listing_id: "listing-uuid", reporter_id: "buyer-uuid", reason: "inaccurate", details: "Le prix affiché ne correspond pas à la description." });
   });
 });

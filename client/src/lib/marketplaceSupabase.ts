@@ -269,6 +269,43 @@ export async function getPortableListingDetail(listingId: string) {
   };
 }
 
+export async function getPortableFavoriteStatus(listingId: string) {
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) return false;
+  const { data, error } = await client.from("am_listing_favorites").select("listing_id").eq("listing_id", listingId).eq("user_id", user.id).maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
+
+export async function setPortableFavorite(listingId: string, favorite: boolean) {
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error("Connexion requise pour enregistrer une annonce.");
+  if (favorite) {
+    const { error } = await client.from("am_listing_favorites").upsert({ listing_id: listingId, user_id: user.id }, { onConflict: "listing_id,user_id" });
+    if (error) throw error;
+    return true;
+  }
+  const { error } = await client.from("am_listing_favorites").delete().eq("listing_id", listingId).eq("user_id", user.id);
+  if (error) throw error;
+  return false;
+}
+
+export async function reportPortableListing(payload: { listingId: string; reason: "fraud" | "prohibited" | "inaccurate" | "harassment" | "other"; details?: string }) {
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error("Connexion requise pour signaler une annonce.");
+  const { error } = await client.from("am_listing_reports").insert({ listing_id: payload.listingId, reporter_id: user.id, reason: payload.reason, details: payload.details?.trim() || null });
+  if (error) {
+    if (error.code === "23505") throw new Error("Vous avez déjà signalé cette annonce.");
+    throw error;
+  }
+}
+
 export async function getPortableSellerProfile(sellerId: string) {
   const client = requireSupabaseClient();
   const { data: seller, error: sellerError } = await client
@@ -522,6 +559,7 @@ export async function markPortableNotificationRead(notificationId: string) {
 export type PortableAdminOverview = { users: number; pendingVerifications: number; listings: number; flaggedContent: number };
 export type PortableAdminVerification = { id: string; userId: string; documentType: string; aiReview: unknown; aiReviewedAt: string | null; createdAt: string; firstName: string; lastName: string; phone: string; city: string; documentKey?: string; selfieKey?: string };
 export type PortableAdminListing = { id: string; title: string; category: string; city: string; status: "published" | "hidden" | "removed" };
+export type PortableAdminReport = { id: string; listingId: string; listingTitle: string; reporterId: string; reason: "fraud" | "prohibited" | "inaccurate" | "harassment" | "other"; details: string | null; status: "pending" | "reviewed" | "dismissed" | "actioned"; createdAt: string };
 
 async function portableAdminRequest<T>(action: string, payload: Record<string, unknown> = {}) {
   const { data, error } = await requireSupabaseClient().functions.invoke("admin-marketplace", { body: { action, ...payload } });
@@ -542,6 +580,10 @@ export function listPortableAdminListings() {
   return portableAdminRequest<PortableAdminListing[]>("listings");
 }
 
+export function listPortableAdminReports() {
+  return portableAdminRequest<PortableAdminReport[]>("reports");
+}
+
 export async function getPortableAdminProofUrl(verificationId: string, proof: "document" | "selfie") {
   const result = await portableAdminRequest<{ url: string }>("proof-url", { verificationId, proof });
   return result.url;
@@ -553,4 +595,8 @@ export function reviewPortableVerification(payload: { verificationId: string; de
 
 export function moderatePortableListing(payload: { listingId: string; status: "published" | "hidden" | "removed" }) {
   return portableAdminRequest<{ status: "published" | "hidden" | "removed" }>("moderate", payload);
+}
+
+export function moderatePortableReport(payload: { reportId: string; status: "reviewed" | "dismissed" | "actioned" }) {
+  return portableAdminRequest<{ status: "reviewed" | "dismissed" | "actioned" }>("report", payload);
 }
