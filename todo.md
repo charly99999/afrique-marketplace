@@ -177,3 +177,5 @@
 - [x] Vérifier le manifeste PWA, les icônes adaptatives Android et l’écran de démarrage après remplacement du logo.
 - [ ] Auditer les erreurs bloquantes visibles dans les parcours Android et web avant de livrer la nouvelle release.
 
+- [x] Corriger la référence cassée du logo dans l’en-tête mobile et vérifier toutes les références de marque web, PWA et Android.
+- [ ] Recompiler, tester et publier la nouvelle release après correction du logo d’en-tête.

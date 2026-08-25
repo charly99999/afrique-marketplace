@@ -1,6 +1,7 @@
+import React from "react";
 import { Link } from "wouter";
 
-const logoUrl = "/manus-storage/afrique-marketplace-logo_c13e817c.png";
+const logoUrl = "https://pnyoanxxifswwwrljqce.supabase.co/storage/v1/object/public/am-public-assets/afrique-marketplace-icon-512.png";
 
 export function BrandMark({ compact = false }: { compact?: boolean }) {
   return (

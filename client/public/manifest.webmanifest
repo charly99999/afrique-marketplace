@@ -9,7 +9,7 @@
   "theme_color": "#10100f",
   "icons": [
     {
-      "src": "/manus-storage/afrique-marketplace-icon-512_0f49c2a0.png",
+      "src": "https://pnyoanxxifswwwrljqce.supabase.co/storage/v1/object/public/am-public-assets/afrique-marketplace-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
