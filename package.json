@@ -9,6 +9,7 @@
     "build:cloudflare": "vite build --config vite.cloudflare.config.ts",
     "android:sync": "pnpm build:cloudflare && cap sync android",
     "android:apk": "pnpm android:sync && cd android && ./gradlew assembleDebug",
+    "android:release": "pnpm build:cloudflare && cap sync android && cd android && ./gradlew assembleRelease",
     "android:open": "cap open android",
     "verify:portable": "pnpm check && pnpm test && pnpm build:cloudflare",
     "start": "NODE_ENV=production node dist/index.js",

@@ -206,3 +206,9 @@
 - [x] Implémenter les améliorations marketplace prioritaires retenues après audit.
 - [x] Ajouter les tests unitaires et d’intégration couvrant chaque amélioration marketplace.
 - [x] Revalider web, Android, responsive, build et publication après les améliorations.
+- [ ] Reproduire l’incident critique web/Android : même numéro, session non reconnue et publication absente dans l’APK.
+- [ ] Comparer les variables Supabase embarquées dans l’APK avec celles de Vercel sans afficher de secrets.
+- [ ] Vérifier les comptes et profils réellement persistés sans lire ni modifier de mot de passe.
+- [ ] Empêcher une réinscription ambiguë avec le même numéro et afficher une erreur de compte existant.
+- [ ] Garantir que la publication persistée est retrouvable par son propriétaire et visible publiquement depuis les deux plateformes.
+- [ ] Ajouter des tests de cohérence inter-plateforme et publier une release après validation.
