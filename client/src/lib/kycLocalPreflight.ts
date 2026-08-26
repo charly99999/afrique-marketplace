@@ -1,14 +1,20 @@
+import { compareDocumentFaceToSelfie, type FaceComparisonResult } from "./faceComparison";
+
 export type LocalKycPreflight = {
   document: {
     quality: "pass" | "fail" | "unknown";
     ocrText: string;
     ocrAvailable: boolean;
+    faceCount: number | null;
+    faceDetected: boolean;
   };
   selfie: {
     faceCount: number | null;
     faceDetected: boolean;
-    liveness: "not_checked";
+    liveness: "passed" | "not_checked";
   };
+  faceComparison: FaceComparisonResult;
+
   safeToSubmit: boolean;
   reasons: string[];
 };
@@ -57,7 +63,7 @@ export async function runLocalDocumentOcr(dataUrl: string) {
   }
 }
 
-export async function runLocalSelfieFaceCheck(dataUrl: string) {
+async function runLocalFaceCheck(dataUrl: string) {
   try {
     const { FaceLandmarker, FilesetResolver } = await import("@mediapipe/tasks-vision");
     const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm");
@@ -72,24 +78,35 @@ export async function runLocalSelfieFaceCheck(dataUrl: string) {
     const result = landmarker.detect(image);
     const faceCount = result.faceLandmarks.length;
     landmarker.close();
-    return { faceCount, faceDetected: faceCount === 1, liveness: "not_checked" as const };
+    const landmarks = faceCount === 1 ? result.faceLandmarks[0].map(point => ({ x: point.x, y: point.y })) : [];
+    return { faceCount, faceDetected: faceCount === 1, landmarks, liveness: "not_checked" as const };
   } catch {
-    return { faceCount: null, faceDetected: false, liveness: "not_checked" as const };
+    return { faceCount: null, faceDetected: false, landmarks: [], liveness: "not_checked" as const };
   }
 }
 
-export async function runLocalKycPreflight(documentData: string, selfieData: string): Promise<LocalKycPreflight> {
+export const runLocalSelfieFaceCheck = runLocalFaceCheck;
+
+export async function runLocalKycPreflight(documentData: string, selfieData: string, selfieLiveness: "passed" | "not_checked" = "not_checked"): Promise<LocalKycPreflight> {
   const documentQuality = await runLocalDocumentOcr(documentData);
-  const selfie = await runLocalSelfieFaceCheck(selfieData);
+  const [documentFace, detectedSelfie] = await Promise.all([runLocalFaceCheck(documentData), runLocalFaceCheck(selfieData)]);
+  const selfie = { ...detectedSelfie, liveness: selfieLiveness };
+  const faceComparison = documentFace.faceDetected && selfie.faceDetected
+    ? await compareDocumentFaceToSelfie(documentData, selfieData, documentFace.landmarks, selfie.landmarks)
+    : { status: "unknown" as const, similarity: null, reason: "Deux visages détectables sont nécessaires pour la comparaison.", model: "mobilenetv2_mcp.onnx" as const };
   const reasons: string[] = [];
   if (documentQuality.quality === "fail") reasons.push(documentQuality.reason);
-  if (!selfie.faceDetected) reasons.push(selfie.faceCount === null ? "La détection locale du visage est indisponible." : "Le selfie doit montrer exactement un visage.");
+  if (!documentFace.faceDetected) reasons.push(documentFace.faceCount === null ? "La détection locale du visage du document est indisponible." : "Le document doit montrer un visage détectable.");
+  if (!selfie.faceDetected) reasons.push(selfie.faceCount === null ? "La détection locale du selfie est indisponible." : "Le selfie doit montrer exactement un visage.");
   if (!documentQuality.available) reasons.push("La lecture OCR locale n’a pas pu être confirmée.");
+  if (faceComparison.status === "fail") reasons.push(faceComparison.reason);
+  if (faceComparison.status === "unknown") reasons.push(faceComparison.reason);
   if (selfie.liveness === "not_checked") reasons.push("Le liveness n’est pas confirmé par une seule image ; le dossier ne sera jamais approuvé sur ce seul résultat.");
   return {
-    document: { quality: documentQuality.quality, ocrText: documentQuality.text, ocrAvailable: documentQuality.available },
+    document: { quality: documentQuality.quality, ocrText: documentQuality.text, ocrAvailable: documentQuality.available, faceCount: documentFace.faceCount, faceDetected: documentFace.faceDetected },
     selfie,
-    safeToSubmit: documentQuality.quality !== "fail" && selfie.faceDetected,
+    faceComparison,
+    safeToSubmit: documentQuality.quality !== "fail" && documentFace.faceDetected && selfie.faceDetected && selfie.liveness === "passed" && faceComparison.status === "pass",
     reasons,
   };
 }

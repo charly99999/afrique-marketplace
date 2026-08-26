@@ -263,3 +263,9 @@
 - [x] Préparer une architecture locale/open source KYC avec qualité document, OCR, visage, liveness, comparaison prudente et repli `pending`.
 - [x] Vérifier la prise en charge des quatre types de document et la synchronisation selfie → photo de profil après approbation.
 - [x] Vérifier statiquement les frontières RLS/Storage/messages/annonces entre deux comptes et préparer les tests réels sans toucher aux données existantes.
+
+- [x] Choisir et documenter un modèle open source réellement exécutable pour comparer le visage du document au selfie.
+- [x] Intégrer l’appel réel du modèle de comparaison dans le pipeline local sans faire confiance à un résultat client falsifiable.
+- [x] Implémenter un liveness actif et conserver `PENDING` si le liveness n’est pas suffisamment fiable.
+- [x] Tester le modèle et le liveness sur des images de test non réelles, sans approuver d’identité réelle.
+- [x] Revalider les quatre documents, le selfie caméra, la photo de profil, RLS, Storage, bundle, TypeScript et l’absence de Gemini.

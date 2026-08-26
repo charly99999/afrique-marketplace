@@ -34,3 +34,12 @@
 - Tesseract.js fournit un OCR WebAssembly exécutable dans le navigateur ou Node.js ; il peut extraire du texte de documents lorsque l’image est lisible, mais ne garantit ni la validité d’un document ni l’égalité de deux visages.
 - ONNX Runtime Web exécute des modèles ONNX dans le navigateur avec WebAssembly, y compris sur les navigateurs Android et iOS indiqués comme compatibles. Des modèles de détection et de comparaison de visage nécessiteraient toutefois une sélection, une évaluation de biais/qualité et une validation juridique avant toute décision automatique.
 - Conclusion d’architecture : les contrôles locaux peuvent écarter des preuves incomplètes ou incohérentes ; l’approbation automatique ne doit être envisagée qu’après des critères mesurés, conservés et testés, tandis que tout résultat ambigu demeure en revue humaine.
+
+## Modèle visage-document étudié
+
+- Open Model Zoo référence `face-recognition-resnet100-arcface-onnx`, un modèle de reconnaissance faciale ResNet100/ArcFace distribué au format ONNX, avec entrée 112×112 ; son dépôt indique une distribution sous Apache 2.0.
+- InsightFace indique que son code est MIT, mais que ses poids entraînés sont réservés à la recherche non commerciale. Les poids `buffalo_l` ne doivent donc pas être embarqués dans une marketplace commerciale sans licence distincte.
+- Conséquence : la PR ne peut pas honnêtement intégrer `buffalo_l` comme modèle commercial libre. Le modèle Open Model Zoo est une piste de comparaison à tester, mais il faut vérifier la licence de chaque artefact téléchargé et son prétraitement avant activation automatique.
+
+- Le dépôt `yakhyo/face-recognition` est présenté comme MIT pour son code et fournit des poids ONNX, mais la page consultée ne documente pas suffisamment la taille, le format précis des poids ou leurs droits de redistribution commerciale. Il ne sera donc pas retenu sans vérification directe de chaque artefact.
+- Le modèle Open Model Zoo `face-recognition-resnet100-arcface-onnx` est documenté en ONNX avec entrée BGR 1×3×112×112 et sortie d’embedding 512 ; il fait toutefois 261 036 388 octets, ce qui est incompatible avec un chargement mobile ordinaire sans stratégie de téléchargement et de cache dédiée. Sa fiche indique Apache 2.0 pour le modèle distribué.
