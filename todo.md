@@ -248,3 +248,10 @@
 - [x] Déterminer pourquoi une analyse réussie ne fait pas systématiquement passer le profil en `verified`.
 - [x] Préparer localement un correctif de validation automatique strictement fondé sur les contrôles disponibles, sans affaiblir la revue humaine.
 - [x] Tester les cas : validation complète, échec de contrôle, inscription incomplète et selfie appliqué comme photo de profil.
+- [x] Établir la source de vérité unique entre GitHub, Vercel, le frontend et le projet Supabase de production.
+- [x] Auditer les échecs de build Vercel, le package manager, les commandes d’installation/build et les variables de production.
+- [x] Vérifier qu’aucun fichier `.env` ni secret privilégié n’est versionné ou exposé au navigateur.
+- [x] Auditer les politiques RLS, le stockage KYC privé, les annonces publiques, les messages, les favoris, les signalements et les droits d’administration.
+- [ ] Supprimer, après validation, la politique d’upload anonyme sur l’asset de marque public et la remplacer par un chemin d’administration contrôlé.
+- [x] Concevoir une stratégie KYC autonome sans dépendance obligatoire à Gemini, avec contrôles locaux réalistes et repli sécurisé.
+- [x] Préparer un rapport de preuves incluant builds, tests, état Vercel, état Supabase et limites des essais réels avant toute publication.
