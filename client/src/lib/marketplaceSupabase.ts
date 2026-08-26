@@ -225,6 +225,7 @@ export async function listMyPortableFollows() {
 
 export function portableMediaUrl(path: string | null | undefined) {
   if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
   return requireSupabaseClient().storage.from("marketplace-media").getPublicUrl(path).data.publicUrl;
 }
 
@@ -378,13 +379,21 @@ export async function unfollowPortableSeller(sellerId: string) {
   if (error) throw error;
 }
 
+async function assertPortableListingCanBePublished(client: ReturnType<typeof requireSupabaseClient>, userId: string) {
+  const { data, error } = await client.from("am_profiles").select("verification_status").eq("id", userId).maybeSingle();
+  if (error) throw error;
+  if (!data || data.verification_status !== "verified") throw new Error("Votre identité doit être vérifiée avant de publier une annonce.");
+}
+
 export async function createPortableListing(payload: Omit<PortableListing, "id" | "userId" | "status" | "createdAt" | "updatedAt">) {
   const client = requireSupabaseClient();
-  const { data: { user } } = await client.auth.getUser();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
   if (!user) throw new Error("Connexion requise.");
+  await assertPortableListingCanBePublished(client, user.id);
   const { data, error } = await client.from("am_listings").insert({
     owner_id: user.id, title: payload.title, description: payload.description, category_id: payload.category,
-    city: payload.city, price: payload.price, currency: payload.currency, item_condition: payload.condition, media: payload.media,
+    city: payload.city, price: payload.price, currency: payload.currency, item_condition: payload.condition, media: payload.media, status: "published",
   }).select().single();
   if (error) throw error;
   return normalizeListing(data as Record<string, unknown>);
@@ -406,6 +415,7 @@ export async function createPortableListingWithMedia(
   const { data: { user }, error: authError } = await client.auth.getUser();
   if (authError) throw authError;
   if (!user) throw new Error("Connexion requise.");
+  await assertPortableListingCanBePublished(client, user.id);
 
   const media = await Promise.all(preparedMedia.map(async ({ dataUrl, fileName }) => {
     const file = await portableFileFromDataUrl(dataUrl, fileName);
@@ -429,6 +439,7 @@ export async function createPortableListingWithMedia(
     currency: payload.currency,
     item_condition: payload.condition,
     media,
+    status: "published",
   }).select().single();
   if (error) throw error;
   return normalizeListing(data as Record<string, unknown>);

@@ -12,6 +12,8 @@ import {
   getPortableFollowStatus,
   getPortableListingDetail,
   getPortableSellerProfile,
+  createPortableListing,
+  portableMediaUrl,
   reportPortableListing,
   setPortableFavorite,
   signInWithPhoneAndPassword,
@@ -164,6 +166,43 @@ describe("authentification par téléphone sans SMS", () => {
   });
 });
 
+
+describe("persistance inter-comptes des annonces", () => {
+  it("écrit explicitement une annonce publiée et renvoie la ligne persistée", async () => {
+    const insert = vi.fn().mockReturnValue({
+      select: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({ data: listingRow, error: null }),
+      })),
+    });
+    const profileChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { verification_status: "verified" }, error: null }) };
+    profileChain.eq.mockReturnValue(profileChain);
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "seller-uuid" } }, error: null }) },
+      from: vi.fn((table: string) => table === "am_profiles" ? { select: vi.fn(() => profileChain) } : { insert }),
+    };
+
+    await expect(createPortableListing({ title: "Appartement familial", description: "Annonce de test suffisamment détaillée.", category: "immobilier", city: "Abidjan", price: "12500000", currency: "XOF", condition: "bon_etat", media: [] })).resolves.toMatchObject({ status: "published" });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ owner_id: "seller-uuid", status: "published" }));
+  });
+
+  it("refuse explicitement la publication d’un profil non vérifié", async () => {
+    const profileChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { verification_status: "required" }, error: null }) };
+    profileChain.eq.mockReturnValue(profileChain);
+    const insert = vi.fn();
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "seller-uuid" } }, error: null }) },
+      from: vi.fn((table: string) => table === "am_profiles" ? { select: vi.fn(() => profileChain) } : { insert }),
+    };
+
+    await expect(createPortableListing({ title: "Appartement familial", description: "Annonce de test suffisamment détaillée.", category: "immobilier", city: "Abidjan", price: "12500000", currency: "XOF", condition: "bon_etat", media: [] })).rejects.toThrow("identité doit être vérifiée");
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("conserve une URL absolue de média issue d’une migration publique", () => {
+    const legacyUrl = "https://old-project.supabase.co/storage/v1/object/public/public-media/peugeot.jpg";
+    expect(portableMediaUrl(legacyUrl)).toBe(legacyUrl);
+  });
+});
 
 describe("visibilité publique du catalogue", () => {
   it("charge les annonces publiées pour tous sans filtre de propriétaire", async () => {
