@@ -233,6 +233,14 @@
 - [ ] Diagnostiquer et corriger la fausse validation de publication : une annonce ne doit réussir que si sa ligne est effectivement créée dans `am_listings` et visible par la requête publique.
 - [x] Proposer séparément toute modification de schéma Supabase, de flow d’authentification ou de logique de publication avant application en production.
 - [ ] Auditer l’erreur `Phone logins are disabled` et proposer une décision explicite entre activation du provider Phone Supabase et maintien de l’authentification interne par alias e-mail.
+- [ ] Auditer l’état de Leaked Password Protection et proposer son activation dans Supabase Auth Settings avant toute modification de production.
 - [x] Corriger les balises canonical et `og:url` pour utiliser `https://afrique-afrique.com/`.
 - [x] Mettre en œuvre un découpage dynamique des routes principales afin de réduire les chunks JavaScript dépassant 500 kB.
 - [ ] Fournir un rapport de branche avec tests, build, preuve de persistance et comparaison de bundle avant toute demande de fusion ou déploiement production.
+- [x] Réaliser un audit de préparation au lancement couvrant persistance des annonces, authentification, visibilité publique, SEO, performance, sécurité et parcours web/Android.
+- [x] Diagnostiquer le dossier d’identité restant en attente après transmission d’un permis et d’un selfie, sans consulter les documents sensibles.
+- [x] Vérifier le statut de traitement et les erreurs de la fonction de vérification, puis proposer une revue humaine ou une résolution explicitement autorisée.
+- [x] Vérifier séparément le dossier du nouveau compte et confirmer qu’aucun échec d’analyse ne reste silencieusement en attente.
+- [x] Concevoir une reprise idempotente des vérifications échouées, sans doublon de dossier ni approbation automatique.
+- [x] Afficher au membre un statut de traitement explicite, la possibilité contrôlée de relancer après incident et l’orientation vers une revue humaine.
+- [x] Couvrir par tests les erreurs de fonction, le repli en revue humaine et l’absence de faux succès avant toute proposition de production.

@@ -16,6 +16,7 @@ import {
   createPortableListingWithMedia,
   portableMediaUrl,
   reportPortableListing,
+  retryPortableVerification,
   setPortableFavorite,
   signInWithPhoneAndPassword,
   signUpWithPhoneAndPassword,
@@ -164,6 +165,70 @@ describe("authentification par téléphone sans SMS", () => {
   it("signale un compte non ouvert si Supabase ne renvoie pas de session", async () => {
     state.client = { auth: { signUp: vi.fn().mockResolvedValue({ data: { session: null, user: { id: "pending-user" } }, error: null }), signInWithPassword: vi.fn() } };
     await expect(signUpWithPhoneAndPassword({ phone: "+2250565242349", password: "different-test-password", firstName: "Awa", lastName: "Kone", city: "Abidjan" })).rejects.toThrow("session n’a pas été ouverte");
+  });
+});
+
+describe("reprise sécurisée de vérification d’identité", () => {
+  it("relance le même dossier, puis confirme l’état réellement persisté sans créer de nouvelle preuve", async () => {
+    const pendingVerification = { id: "verification-uuid", status: "pending", admin_note: null, ai_reviewed_at: null };
+    const reviewedVerification = { ...pendingVerification, ai_reviewed_at: "2026-08-26T12:15:03.000Z" };
+    const maybeSingle = vi.fn()
+      .mockResolvedValueOnce({ data: pendingVerification, error: null })
+      .mockResolvedValueOnce({ data: reviewedVerification, error: null });
+    const chain = { eq: vi.fn(), maybeSingle };
+    chain.eq.mockReturnValue(chain);
+    const invoke = vi.fn().mockResolvedValue({ data: { status: "pending" }, error: null });
+    const insert = vi.fn();
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "member-uuid" } }, error: null }) },
+      from: vi.fn(() => ({ select: vi.fn(() => chain), insert })),
+      functions: { invoke },
+    };
+
+    await expect(retryPortableVerification("verification-uuid")).resolves.toMatchObject({
+      verification: { id: "verification-uuid", status: "pending", aiReviewedAt: "2026-08-26T12:15:03.000Z" },
+      analysisError: null,
+    });
+
+    expect(invoke).toHaveBeenCalledWith("verify-identity", { body: { verificationId: "verification-uuid" } });
+    expect(insert).not.toHaveBeenCalled();
+    expect(maybeSingle).toHaveBeenCalledTimes(2);
+  });
+
+  it("n’annonce pas de réussite lorsque la fonction échoue avant qu’une analyse persistée soit confirmée", async () => {
+    const pendingVerification = { id: "verification-uuid", status: "pending", admin_note: null, ai_reviewed_at: null };
+    const maybeSingle = vi.fn()
+      .mockResolvedValueOnce({ data: pendingVerification, error: null })
+      .mockResolvedValueOnce({ data: pendingVerification, error: null });
+    const chain = { eq: vi.fn(), maybeSingle };
+    chain.eq.mockReturnValue(chain);
+    const invoke = vi.fn().mockResolvedValue({ data: null, error: new Error("service unavailable") });
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "member-uuid" } }, error: null }) },
+      from: vi.fn(() => ({ select: vi.fn(() => chain) })),
+      functions: { invoke },
+    };
+
+    await expect(retryPortableVerification("verification-uuid")).resolves.toMatchObject({
+      verification: { id: "verification-uuid", status: "pending", aiReviewedAt: null },
+      analysisError: expect.stringContaining("n’a pas pu être confirmée"),
+    });
+  });
+
+  it("refuse une nouvelle analyse automatique lorsqu’un dossier est déjà en revue humaine", async () => {
+    const reviewedVerification = { id: "verification-uuid", status: "pending", admin_note: null, ai_reviewed_at: "2026-08-26T12:15:03.000Z" };
+    const maybeSingle = vi.fn().mockResolvedValue({ data: reviewedVerification, error: null });
+    const chain = { eq: vi.fn(), maybeSingle };
+    chain.eq.mockReturnValue(chain);
+    const invoke = vi.fn();
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "member-uuid" } }, error: null }) },
+      from: vi.fn(() => ({ select: vi.fn(() => chain) })),
+      functions: { invoke },
+    };
+
+    await expect(retryPortableVerification("verification-uuid")).rejects.toThrow("déjà en revue humaine");
+    expect(invoke).not.toHaveBeenCalled();
   });
 });
 
