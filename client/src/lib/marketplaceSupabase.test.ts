@@ -215,6 +215,34 @@ describe("reprise sécurisée de vérification d’identité", () => {
     });
   });
 
+  it("autorise une reprise du même dossier après une indisponibilité documentée du fournisseur", async () => {
+    const unavailableVerification = {
+      id: "verification-uuid",
+      status: "pending",
+      admin_note: null,
+      ai_reviewed_at: "2026-08-26T12:15:03.000Z",
+      ai_review: { analysisAvailable: false, reasons: ["Le fournisseur d’analyse automatique est momentanément indisponible."] },
+    };
+    const confirmedReview = { ...unavailableVerification, ai_review: { analysisAvailable: true, reasons: [] } };
+    const maybeSingle = vi.fn()
+      .mockResolvedValueOnce({ data: unavailableVerification, error: null })
+      .mockResolvedValueOnce({ data: confirmedReview, error: null });
+    const chain = { eq: vi.fn(), maybeSingle };
+    chain.eq.mockReturnValue(chain);
+    const invoke = vi.fn().mockResolvedValue({ data: { status: "pending" }, error: null });
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "member-uuid" } }, error: null }) },
+      from: vi.fn(() => ({ select: vi.fn(() => chain) })),
+      functions: { invoke },
+    };
+
+    await expect(retryPortableVerification("verification-uuid")).resolves.toMatchObject({
+      verification: { id: "verification-uuid", status: "pending", analysisAvailable: true, retryAllowed: false },
+      analysisError: null,
+    });
+    expect(invoke).toHaveBeenCalledWith("verify-identity", { body: { verificationId: "verification-uuid" } });
+  });
+
   it("refuse une nouvelle analyse automatique lorsqu’un dossier est déjà en revue humaine", async () => {
     const reviewedVerification = { id: "verification-uuid", status: "pending", admin_note: null, ai_reviewed_at: "2026-08-26T12:15:03.000Z" };
     const maybeSingle = vi.fn().mockResolvedValue({ data: reviewedVerification, error: null });

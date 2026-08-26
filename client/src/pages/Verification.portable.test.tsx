@@ -38,7 +38,7 @@ vi.mock("@/lib/trpc", () => ({
 
 import Verification from "./Verification";
 
-async function renderVerification(verification: { id: string; status: "pending"; adminNote: null; aiReviewedAt: string | null }): Promise<ReactTestRenderer> {
+async function renderVerification(verification: { id: string; status: "pending"; adminNote: null; aiReviewedAt: string | null; retryAllowed: boolean; analysisAvailable: boolean | null }): Promise<ReactTestRenderer> {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
   queryClient.setQueryData(["portable-my-profile"], { id: "member-uuid", verificationStatus: "pending" });
   queryClient.setQueryData(["portable-my-verification"], verification);
@@ -59,12 +59,12 @@ describe("Vérification portable : reprise sans doublon", () => {
   });
 
   it("propose une relance du même dossier quand l’analyse n’a pas été confirmée", async () => {
-    getMyPortableVerification.mockResolvedValue({ id: "verification-uuid", status: "pending", adminNote: null, aiReviewedAt: null });
-    retryPortableVerification.mockResolvedValue({ verification: { id: "verification-uuid", status: "pending", adminNote: null, aiReviewedAt: "2026-08-26T12:15:03.000Z" }, analysisError: null });
+    getMyPortableVerification.mockResolvedValue({ id: "verification-uuid", status: "pending", adminNote: null, aiReviewedAt: null, retryAllowed: true, analysisAvailable: null });
+    retryPortableVerification.mockResolvedValue({ verification: { id: "verification-uuid", status: "pending", adminNote: null, aiReviewedAt: "2026-08-26T12:15:03.000Z", retryAllowed: false, analysisAvailable: true }, analysisError: null });
 
-    const renderer = await renderVerification({ id: "verification-uuid", status: "pending", adminNote: null, aiReviewedAt: null });
+    const renderer = await renderVerification({ id: "verification-uuid", status: "pending", adminNote: null, aiReviewedAt: null, retryAllowed: true, analysisAvailable: null });
     expect(JSON.stringify(renderer.toJSON())).toContain("Relancer l’analyse sécurisée");
-    expect(JSON.stringify(renderer.toJSON())).toContain("aucun document ne sera envoyé une seconde fois");
+    expect(JSON.stringify(renderer.toJSON())).toContain("sans envoyer une seconde fois vos preuves");
 
     const retryButton = renderer.root.findAllByType("button").find((button: ReactTestInstance) => button.props.children === "Relancer l’analyse sécurisée");
     expect(retryButton).toBeDefined();
@@ -73,9 +73,9 @@ describe("Vérification portable : reprise sans doublon", () => {
   });
 
   it("affiche une revue humaine et ne propose aucune relance automatique après analyse confirmée", async () => {
-    getMyPortableVerification.mockResolvedValue({ id: "verification-uuid", status: "pending", adminNote: null, aiReviewedAt: "2026-08-26T12:15:03.000Z" });
+    getMyPortableVerification.mockResolvedValue({ id: "verification-uuid", status: "pending", adminNote: null, aiReviewedAt: "2026-08-26T12:15:03.000Z", retryAllowed: false, analysisAvailable: true });
 
-    const renderer = await renderVerification({ id: "verification-uuid", status: "pending", adminNote: null, aiReviewedAt: "2026-08-26T12:15:03.000Z" });
+    const renderer = await renderVerification({ id: "verification-uuid", status: "pending", adminNote: null, aiReviewedAt: "2026-08-26T12:15:03.000Z", retryAllowed: false, analysisAvailable: true });
     const content = JSON.stringify(renderer.toJSON());
     expect(content).toContain("revue humaine");
     expect(content).not.toContain("Relancer l’analyse sécurisée");

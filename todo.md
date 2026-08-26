@@ -244,3 +244,7 @@
 - [x] Concevoir une reprise idempotente des vérifications échouées, sans doublon de dossier ni approbation automatique.
 - [x] Afficher au membre un statut de traitement explicite, la possibilité contrôlée de relancer après incident et l’orientation vers une revue humaine.
 - [x] Couvrir par tests les erreurs de fonction, le repli en revue humaine et l’absence de faux succès avant toute proposition de production.
+- [x] Cartographier les statuts d’identité du frontend, de la fonction Edge et de la base afin d’identifier toute divergence.
+- [x] Déterminer pourquoi une analyse réussie ne fait pas systématiquement passer le profil en `verified`.
+- [x] Préparer localement un correctif de validation automatique strictement fondé sur les contrôles disponibles, sans affaiblir la revue humaine.
+- [x] Tester les cas : validation complète, échec de contrôle, inscription incomplète et selfie appliqué comme photo de profil.

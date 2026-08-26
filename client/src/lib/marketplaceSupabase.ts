@@ -475,6 +475,8 @@ export type PortableVerification = {
   status: "pending" | "approved" | "rejected";
   adminNote: string | null;
   aiReviewedAt: string | null;
+  analysisAvailable: boolean | null;
+  retryAllowed: boolean;
 };
 
 export type PortableVerificationAnalysisResult = {
@@ -483,17 +485,23 @@ export type PortableVerificationAnalysisResult = {
 };
 
 function normalizeVerification(row: Record<string, unknown>): PortableVerification {
+  const review = row.ai_review && typeof row.ai_review === "object" ? row.ai_review as Record<string, unknown> : null;
+  const reasons = Array.isArray(review?.reasons) ? review.reasons.filter((reason): reason is string => typeof reason === "string") : [];
+  const analysisAvailable = typeof review?.analysisAvailable === "boolean" ? review.analysisAvailable : null;
+  const aiReviewedAt = row.ai_reviewed_at ? String(row.ai_reviewed_at) : null;
   return {
     id: String(row.id),
     status: row.status as PortableVerification["status"],
     adminNote: row.admin_note ? String(row.admin_note) : null,
-    aiReviewedAt: row.ai_reviewed_at ? String(row.ai_reviewed_at) : null,
+    aiReviewedAt,
+    analysisAvailable,
+    retryAllowed: row.status === "pending" && (!aiReviewedAt || analysisAvailable === false || reasons.some(reason => reason.includes("fournisseur d’analyse automatique est momentanément indisponible"))),
   };
 }
 
 export async function getMyPortableVerification() {
   const client = requireSupabaseClient();
-  const { data, error } = await client.from("am_identity_verifications").select("id, status, admin_note, ai_reviewed_at, created_at").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data, error } = await client.from("am_identity_verifications").select("id, status, admin_note, ai_review, ai_reviewed_at, created_at").order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw error;
   return data ? normalizeVerification(data as Record<string, unknown>) : null;
 }
@@ -505,7 +513,7 @@ async function confirmPortableVerificationAnalysis(
 ): Promise<PortableVerificationAnalysisResult> {
   const { data, error } = await client
     .from("am_identity_verifications")
-    .select("id, status, admin_note, ai_reviewed_at")
+    .select("id, status, admin_note, ai_review, ai_reviewed_at")
     .eq("id", verification.id)
     .maybeSingle();
   if (error) throw error;
@@ -542,7 +550,7 @@ export async function retryPortableVerification(verificationId: string) {
 
   const { data, error } = await client
     .from("am_identity_verifications")
-    .select("id, status, admin_note, ai_reviewed_at")
+    .select("id, status, admin_note, ai_review, ai_reviewed_at")
     .eq("id", verificationId)
     .maybeSingle();
   if (error) throw error;
@@ -550,7 +558,7 @@ export async function retryPortableVerification(verificationId: string) {
 
   const verification = normalizeVerification(data as Record<string, unknown>);
   if (verification.status !== "pending") throw new Error("Ce dossier a déjà reçu une décision et ne peut pas être relancé.");
-  if (verification.aiReviewedAt) throw new Error("Ce dossier est déjà en revue humaine ; aucune nouvelle analyse automatique n’est nécessaire.");
+  if (!verification.retryAllowed) throw new Error("Ce dossier est déjà en revue humaine ; aucune nouvelle analyse automatique n’est nécessaire.");
 
   return invokePortableVerificationAnalysis(client, verification);
 }
@@ -575,7 +583,7 @@ export async function submitPortableVerification(payload: { documentType: "cni" 
     document_type: payload.documentType,
     document_path: documentPath,
     selfie_path: selfiePath,
-  }).select("id, status, admin_note, ai_reviewed_at").single();
+  }).select("id, status, admin_note, ai_review, ai_reviewed_at").single();
   if (error) throw error;
   const verification = normalizeVerification(data as Record<string, unknown>);
   return invokePortableVerificationAnalysis(client, verification);
