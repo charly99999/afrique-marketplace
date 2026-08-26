@@ -258,3 +258,8 @@
 
 - [x] Pousser uniquement la branche `fix/publication-auth-seo-bundle` et créer une Pull Request sans fusion, déploiement, migration, changement de secret ni modification de données réelles.
 - [x] Remettre dans la PR le commit, la liste des fichiers, les migrations, Edge Functions, variables, changements KYC/Storage/RLS et la procédure de production soumise à validation ultérieure.
+
+- [x] Vérifier explicitement si la PR dépend encore de `GOOGLE_GENERATIVE_AI_API_KEY` pour une approbation automatique.
+- [x] Préparer une architecture locale/open source KYC avec qualité document, OCR, visage, liveness, comparaison prudente et repli `pending`.
+- [x] Vérifier la prise en charge des quatre types de document et la synchronisation selfie → photo de profil après approbation.
+- [x] Vérifier statiquement les frontières RLS/Storage/messages/annonces entre deux comptes et préparer les tests réels sans toucher aux données existantes.

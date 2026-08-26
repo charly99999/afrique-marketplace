@@ -9,14 +9,12 @@ Deno.serve(async (request) => {
 
   const url = Deno.env.get("SUPABASE_URL");
   const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const aiKey = Deno.env.get("GOOGLE_GENERATIVE_AI_API_KEY");
-  const aiModel = Deno.env.get("GOOGLE_GENERATIVE_AI_MODEL") || "gemini-2.5-flash";
   if (!url || !serviceRole) return Response.json({ error: "Service de vérification non configuré." }, { status: 503, headers: corsHeaders });
 
   const authHeader = request.headers.get("Authorization");
   if (!authHeader) return Response.json({ error: "Authentification requise." }, { status: 401, headers: corsHeaders });
   const admin = createClient(url, serviceRole);
-  const token = authHeader.replace("Bearer ", "");
+  const token = authHeader.replace(/^Bearer\s+/i, "");
   const { data: { user } } = await admin.auth.getUser(token);
   if (!user) return Response.json({ error: "Session invalide." }, { status: 401, headers: corsHeaders });
 
@@ -28,80 +26,32 @@ Deno.serve(async (request) => {
   if (!profile) return Response.json({ error: "Profil introuvable, dossier conservé en attente." }, { status: 422, headers: corsHeaders });
   const ownedPrefix = `${user.id}/`;
   if (!verification.document_path.startsWith(ownedPrefix) || !verification.selfie_path.startsWith(ownedPrefix)) return Response.json({ error: "Chemins de preuve invalides." }, { status: 403, headers: corsHeaders });
-  const applyDecision = async (decision: ReturnType<typeof decideIdentityVerification>, review: IdentityReview, note: string | null = null) => {
+
+  const applyDecision = async (review: IdentityReview) => {
     const { error } = await admin.rpc("am_apply_identity_decision", {
       p_verification_id: verificationId,
-      p_decision: decision.verificationStatus,
+      p_decision: "pending",
       p_review: review,
-      p_note: note,
+      p_note: null,
     });
     if (error) throw new Error("La transition de vérification n’a pas été enregistrée.");
   };
-  const keepPendingForManualReview = async (reason: string) => {
-    const review = unavailableIdentityReview(reason);
-    try {
-      await applyDecision(decideIdentityVerification(review), review);
-      return Response.json({ status: "pending", analysisUnavailable: true, message: "Analyse automatique indisponible. Votre dossier reste en attente et pourra être relancé sans nouvelle preuve." }, { headers: corsHeaders });
-    } catch (error) {
-      console.error("verify-identity pending transition failed", error instanceof Error ? error.message : "unknown");
-      return Response.json({ error: "Le statut de vérification n’a pas pu être confirmé." }, { status: 500, headers: corsHeaders });
-    }
-  };
-  if (!aiKey) return keepPendingForManualReview("La configuration de l’analyse automatique est momentanément indisponible.");
 
-  // Le fournisseur IA est explicitement remplacé par une clé externe. Cette
-  // fonction ne déclare jamais l’identité d’une personne : elle n’automatise
-  // que les dossiers très cohérents, sinon maintient la revue humaine.
-  const toInlineImage = async (path: string) => {
-    const { data: signed, error } = await admin.storage.from("marketplace-identity").createSignedUrl(path, 60);
-    if (error || !signed?.signedUrl) throw new Error("Impossible de lire une preuve privée.");
-    const image = await fetch(signed.signedUrl);
-    if (!image.ok) throw new Error("Preuve privée indisponible.");
-    const bytes = new Uint8Array(await image.arrayBuffer());
-    let binary = "";
-    bytes.forEach(byte => { binary += String.fromCharCode(byte); });
-    return { inlineData: { mimeType: image.headers.get("content-type")?.split(";")[0] || "image/jpeg", data: btoa(binary) } };
-  };
-  let documentImage: { inlineData: { mimeType: string; data: string } };
-  let selfieImage: { inlineData: { mimeType: string; data: string } };
+  const review: IdentityReview = unavailableIdentityReview(
+    "Aucun fournisseur distant n’est requis : les pré-contrôles locaux doivent être complétés et toute décision positive reste soumise à une revue fondée sur les preuves."
+  );
   try {
-    [documentImage, selfieImage] = await Promise.all([toInlineImage(verification.document_path), toInlineImage(verification.selfie_path)]);
+    await applyDecision(decideIdentityVerification(review));
   } catch (error) {
-    console.error("verify-identity private proof read failed", error instanceof Error ? error.message : "unknown");
-    return keepPendingForManualReview("Les preuves privées sont momentanément indisponibles.");
+    console.error("verify-identity pending transition failed", error instanceof Error ? error.message : "unknown");
+    return Response.json({ error: "Le statut de vérification n’a pas pu être confirmé." }, { status: 500, headers: corsHeaders });
   }
-  const declaredProfile = JSON.stringify({ prenom: profile.first_name, nom: profile.last_name, ville: profile.city });
-  const prompt = `Tu analyses un dossier d’identité pour une marketplace. Document déclaré: ${verification.document_type}. Profil déclaré (à comparer visuellement au document, sans prétendre identifier la personne): ${declaredProfile}. Le selfie doit montrer nettement un visage et le document doit être lisible. Retourne uniquement un JSON avec recommendation (approve|reject|manual_review), confidence (0-100), documentReadable, selfieFaceVisible, profileInformationConsistent et reasons. Approve uniquement si les trois indicateurs sont vrais et la confiance est au moins 85. Reject seulement si le document ou le selfie est inutilisable ; dans tout autre cas, manual_review. N’infère aucun attribut sensible.`;
-  const modelResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${aiKey}`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }, documentImage, selfieImage] }], generationConfig: { responseMimeType: "application/json" } }),
-  });
-  if (!modelResponse.ok) {
-    const providerDetail = (await modelResponse.text()).replace(/[\r\n\t]+/g, " ").slice(0, 180);
-    console.error("verify-identity provider failed", JSON.stringify({ status: modelResponse.status, model: aiModel, detail: providerDetail }));
-    return keepPendingForManualReview("Le fournisseur d’analyse automatique est momentanément indisponible.");
-  }
-  const payload = await modelResponse.json();
-  let review: IdentityReview;
-  try {
-    review = JSON.parse(payload.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}");
-  } catch {
-    return keepPendingForManualReview("La réponse d’analyse automatique est inexploitable.");
-  }
-  const normalizedReview: IdentityReview = {
-    recommendation: review.recommendation,
-    confidence: typeof review.confidence === "number" ? review.confidence : -1,
-    documentReadable: review.documentReadable === true,
-    selfieFaceVisible: review.selfieFaceVisible === true,
-    profileInformationConsistent: review.profileInformationConsistent === true,
-    analysisAvailable: true,
-    reasons: Array.isArray(review.reasons) ? review.reasons.filter((reason): reason is string => typeof reason === "string").slice(0, 5) : [],
-  };
-  const decision = decideIdentityVerification(normalizedReview);
-  try {
-    await applyDecision(decision, normalizedReview, decision.verificationStatus === "rejected" ? normalizedReview.reasons?.join(" ") || null : null);
-  } catch (error) {
-    console.error("verify-identity decision transition failed", error instanceof Error ? error.message : "unknown");
-    return Response.json({ error: "La décision d’identité n’a pas pu être confirmée." }, { status: 500, headers: corsHeaders });
-  }
-  return Response.json({ status: decision.verificationStatus, review: normalizedReview }, { headers: corsHeaders });
+
+  return Response.json({
+    status: "pending",
+    analysisAvailable: false,
+    manualReviewRequired: true,
+    message: "Les pré-contrôles locaux sont terminés. Votre dossier reste protégé et sera examiné sans dépendre d’une API Gemini.",
+    review,
+  }, { headers: corsHeaders });
 });

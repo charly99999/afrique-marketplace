@@ -4,13 +4,13 @@
 **Portée :** code, GitHub, Vercel, Supabase, KYC, stockage, RLS et build.  
 **Statut de production :** **aucune modification de production réalisée pendant cet audit**. Aucun push, fusion vers `main`, déploiement Vercel, migration Supabase ou changement de secret n’a été effectué.
 
-> **Verdict :** l’architecture de production est désormais identifiée sans ambiguïté, mais le service n’est pas encore prêt pour une ouverture large. Les priorités restantes sont la réparation du fournisseur KYC, l’application contrôlée des migrations locales préparées, et les essais réels autorisés avec deux comptes.
+> **Verdict :** l’architecture de production est désormais identifiée sans ambiguïté, mais le service n’est pas encore prêt pour une ouverture large. Gemini a été retiré de la branche de PR ; les priorités restantes sont l’évaluation d’un modèle local fiable, l’application contrôlée des migrations préparées et les essais réels autorisés avec deux comptes.
 
 ## A. Problèmes trouvés
 
 | Priorité | Constat vérifié | Conséquence actuelle |
 |---|---|---|
-| Critique | Le premier dossier KYC a reçu HTTP 503 avant décision ; un second a reçu HTTP 200 côté fonction mais le fournisseur d’analyse a renvoyé HTTP 404. | Aucun dossier ne peut être approuvé automatiquement tant que le fournisseur n’est pas rétabli ou remplacé. |
+| Critique | Le premier dossier KYC a reçu HTTP 503 avant décision ; un second a reçu HTTP 200 côté fonction mais le fournisseur d’analyse a renvoyé HTTP 404. | Gemini est retiré de la PR ; aucun modèle local de comparaison n’est encore autorisé à approuver automatiquement. |
 | Élevée | La fonction de production séparait mise à jour du dossier, profil, selfie et notification. | Une décision positive pouvait ne pas synchroniser complètement le profil. |
 | Élevée | Une politique Storage autorise l’upload anonyme du nom exact de l’icône de marque. | Un visiteur anonyme peut potentiellement injecter ou remplacer cet asset précis. |
 | Élevée | Le build public sert encore le canonical `afrique-marketplace.vercel.app`. | Le SEO du domaine officiel `afrique-afrique.com` reste incorrect jusqu’au déploiement validé de la correction locale. |
@@ -24,7 +24,7 @@ Les corrections suivantes sont disponibles sur la branche locale `fix/publicatio
 | Correctif | Preuve / effet |
 |---|---|
 | Transition KYC atomique | La migration locale `202608260001_identity_validation_atomic_transition.sql` prépare une seule transaction pour le dossier, `verification_status`, la photo de profil et la notification. |
-| Décision automatique stricte | Une validation n’est accordée que si le fournisseur retourne `approve`, une confiance ≥ 85, un document lisible, un selfie exploitable et des informations cohérentes. Tout doute reste `pending`. |
+| Décision automatique stricte | La fonction Edge ne dépend plus d’un fournisseur distant et n’approuve pas sur la base d’un résultat client. Les pré-contrôles locaux écartent les preuves inutilisables ; tout cas non prouvé reste `pending`. |
 | Reprise sûre | Une indisponibilité de l’analyse rend le même dossier relançable sans créer de doublon ni réenvoyer pièce ou selfie. Une vraie revue humaine ne se relance pas en boucle. |
 | Séparation des états KYC | L’interface distingue désormais clairement l’analyse indisponible de la revue humaine et n’annonce pas de faux succès. |
 | Photo de profil | Le selfie n’est appliqué comme photo de profil qu’après une approbation complète. |
@@ -49,7 +49,7 @@ Les corrections suivantes sont disponibles sur la branche locale `fix/publicatio
 | Dépôt Git | `charly99999/afrique-marketplace`, branche de production `main` | Vercel déploie ce dépôt ; les corrections nouvelles restent sur branche locale. |
 | Frontend web | React/Vite, `VITE_BACKEND_MODE=supabase` | Le bundle Vercel public contient le mode Supabase et la référence au projet de production. |
 | Base métier | Supabase `pnyoanxxifswwwrljqce`, schéma `public.am_*` | RLS activée sur les tables actives. Les anciennes tables `listings` ou `kyc_submissions` ne sont pas la base de production actuelle. |
-| KYC | `am_identity_verifications` + bucket privé `marketplace-identity` + fonction `verify-identity` | La fonction version 3 est active, mais son fournisseur d’analyse est actuellement défaillant. |
+| KYC | `am_identity_verifications` + bucket privé `marketplace-identity` + fonction `verify-identity` | La PR retire Gemini de l’exécution ; les cas non prouvés restent en revue humaine. |
 | Administration | Fonction Edge `admin-marketplace`, JWT obligatoire | Les actions d’administration sont contrôlées côté serveur et par rôle. |
 | Hébergement | Projet Vercel `afrique-marketplace` | Le domaine officiel répond HTTP 200 ; `www` redirige HTTP 307 vers le domaine racine. |
 
@@ -66,7 +66,7 @@ Les buckets vérifiés sont séparés : `marketplace-identity` est privé, limit
 | Catégorie | Noms attendus | Règle |
 |---|---|---|
 | Frontend Vercel | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_BACKEND_MODE` | Seules l’URL et la clé publishable sont compilées côté navigateur. |
-| Supabase Edge Functions | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, optionnellement `GOOGLE_GENERATIVE_AI_MODEL` | Valeurs uniquement côté serveur Supabase ; jamais dans Vite, GitHub ou le navigateur. |
+| Supabase Edge Functions | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Aucune clé Gemini n’est nécessaire dans la PR ; les valeurs restent côté serveur Supabase. |
 | Déploiement | `packageManager: pnpm`, `vercel.json` avec `pnpm build:cloudflare` et `dist/cloudflare` | Le verrouillage est `pnpm-lock.yaml` ; aucun `bun.lock` n’est présent. |
 
 L’audit Git de noms de fichiers confirme qu’aucun vrai fichier `.env` n’est suivi dans l’historique consulté ; seul `.env.portable.example` est versionné comme modèle sans secret.
@@ -75,10 +75,10 @@ L’audit Git de noms de fichiers confirme qu’aucun vrai fichier `.env` n’es
 
 | Vérification locale | Résultat |
 |---|---|
-| Tests automatisés | **28 fichiers, 104 tests réussis**. |
+| Tests automatisés | **29 fichiers, 108 tests réussis**. |
 | TypeScript | Réussi avec `pnpm check`. |
 | Build Vite portable | Réussi avec `pnpm build:cloudflare`. |
-| Budget bundle | **21 chunks**, maximum **443 504 octets**, inférieur à la limite de 500 000 octets. |
+| Budget bundle | **23 chunks**, maximum **443 504 octets**, inférieur à la limite de 500 000 octets ; la vision est chargée séparément. |
 | KYC logique | Validation complète, rejet, maintien en attente, selfie appliqué uniquement après approbation et reprise après fournisseur indisponible couverts localement. |
 | Mode backend | Le mode Supabase est testé comme défaut ; le mode legacy nécessite une demande explicite. |
 
@@ -86,14 +86,14 @@ L’audit Git de noms de fichiers confirme qu’aucun vrai fichier `.env` n’es
 
 Le dernier déploiement production Vercel est `READY`, issu du commit `09b824008d55c968266375eaeb54725a69d72da6` de `main`. Le journal de ce build ne contient pas l’erreur `vite: command not found`; il contient seulement un ancien avertissement de taille de chunk. La configuration versionnée est cohérente : Vite, Node 24.x, pnpm et la commande `pnpm build:cloudflare` sont disponibles.
 
-Le build Vercel déjà en ligne est néanmoins antérieur aux correctifs locaux de canonical, reprise KYC, transition atomique et sécurité Storage.
+Le build Vercel déjà en ligne est néanmoins antérieur aux correctifs locaux de canonical, reprise KYC, transition atomique, sécurité Storage et retrait de Gemini.
 
 ## I à N. Essais réels : état honnête
 
 | Essai demandé | État | Justification |
 |---|---|---|
 | Inscription complète | Partiellement vérifié par le code et les tests ; pas de nouvel essai de production réalisé | Aucun compte ou mot de passe réel n’est créé sans accord et suivi explicite. |
-| KYC complet | Non validé de bout en bout | Le fournisseur actuel renvoie HTTP 404 ; les documents de membres ne sont pas ouverts ni réutilisés pour des tests. |
+| KYC complet | Non validé de bout en bout | Aucun modèle local de comparaison fiable n’est encore activé ; les documents de membres ne sont pas ouverts ni réutilisés pour des tests. |
 | Publication d’annonce | Non validée de bout en bout | La production contient zéro annonce et aucun profil n’est vérifié ; la RLS bloque correctement la création. |
 | Message privé | Vérifié statiquement par RLS ; non validé avec deux comptes | Nécessite deux sessions réelles autorisées. |
 | Sécurité Storage KYC | Vérifiée statiquement par bucket privé et RLS ; non validée par tentative croisée | Un test croisé exige deux comptes consentants et ne doit jamais utiliser de document réel non nécessaire. |
