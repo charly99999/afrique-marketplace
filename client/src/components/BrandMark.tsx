@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "wouter";
+import { embeddedLogoDataUri } from "./logoData";
 
-const logoUrl = "https://pnyoanxxifswwwrljqce.supabase.co/storage/v1/object/public/am-public-assets/afrique-marketplace-icon-512.png";
+const logoUrl = embeddedLogoDataUri;
 
 export function BrandMark({ compact = false }: { compact?: boolean }) {
   return (

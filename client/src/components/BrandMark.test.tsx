@@ -16,7 +16,7 @@ describe("BrandMark", () => {
     });
     const image = renderer!.root.findByType("img");
 
-    expect(image.props.src).toBe("https://pnyoanxxifswwwrljqce.supabase.co/storage/v1/object/public/am-public-assets/afrique-marketplace-icon-512.png");
+    expect(image.props.src).toMatch(/^data:image\/png;base64,/);
     expect(image.props.src).not.toContain("afrique-marketplace-logo_c13e817c");
   });
 });

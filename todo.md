@@ -215,7 +215,7 @@
 - [x] Corriger le HTTP 503 de `verify-identity`, conserver le dossier en attente de façon explicite et permettre sa reprise par l’administration.
 - [x] Afficher clairement dans Publier que la diffusion est bloquée tant que le profil n’est pas vérifié, avec accès direct à Vérification.
 - [ ] Rejouer le parcours compte → vérification IA → approbation → publication après correction, sans utiliser de données inventées.
-- [ ] Diagnostiquer pourquoi l’annonce Peugeot partagée n’est pas visible depuis l’autre compte sur le site et l’APK.
+- [x] Diagnostiquer pourquoi l’annonce Peugeot partagée n’est pas visible depuis l’autre compte sur le site et l’APK.
 - [x] Vérifier la ligne réelle de l’annonce Peugeot, son statut, son propriétaire, les filtres du catalogue et les politiques RLS sans inventer de données.
 - [x] Corriger la visibilité publique inter-comptes de toute annonce réellement publiée et ajouter une régression web/Android.
 - [ ] Revalider avec l’annonce Peugeot réelle, puis publier un checkpoint uniquement après preuve de visibilité.
@@ -224,3 +224,4 @@
 - [x] Empêcher toute confirmation de publication avant persistance vérifiée et afficher une erreur exploitable en cas d’échec RLS, session ou stockage.
 - [ ] Ajouter une régression inter-comptes couvrant création, lecture publique et absence d’isolation accidentelle.
 - [ ] Revalider les annonces réelles des deux téléphones avant de déclarer la marketplace opérationnelle.
+- [x] Corriger le logo cassé visible dans le dernier aperçu et vérifier son affichage web, PWA et Android.
