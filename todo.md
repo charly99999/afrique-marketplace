@@ -255,3 +255,6 @@
 - [ ] Supprimer, après validation, la politique d’upload anonyme sur l’asset de marque public et la remplacer par un chemin d’administration contrôlé.
 - [x] Concevoir une stratégie KYC autonome sans dépendance obligatoire à Gemini, avec contrôles locaux réalistes et repli sécurisé.
 - [x] Préparer un rapport de preuves incluant builds, tests, état Vercel, état Supabase et limites des essais réels avant toute publication.
+
+- [ ] Pousser uniquement la branche `fix/publication-auth-seo-bundle` et créer une Pull Request sans fusion, déploiement, migration, changement de secret ni modification de données réelles.
+- [ ] Remettre dans la PR le commit, la liste des fichiers, les migrations, Edge Functions, variables, changements KYC/Storage/RLS et la procédure de production soumise à validation ultérieure.
