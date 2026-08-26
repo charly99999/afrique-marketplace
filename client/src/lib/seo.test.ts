@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { getSeoMetadata } from "./seo";
 
 describe("métadonnées SEO", () => {
+  it("utilise le domaine officiel comme origine canonique", () => {
+    expect(getSeoMetadata("/").canonical).toBe("https://afrique-afrique.com/");
+    expect(getSeoMetadata("/annonces").canonical).toBe("https://afrique-afrique.com/annonces");
+  });
+
   it("autorise l’indexation des pages publiques et de leurs routes UUID", () => {
     expect(getSeoMetadata("/annonces").robots).toBe("index,follow");
     expect(getSeoMetadata("/annonce/00000000-0000-0000-0000-000000000000").robots).toBe("index,follow");

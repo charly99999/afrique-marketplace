@@ -22,5 +22,18 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist", "cloudflare"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("/@supabase/")) return "supabase-vendor";
+          if (id.includes("/@trpc/") || id.includes("/superjson/")) return "trpc-vendor";
+          if (id.includes("/@radix-ui/") || id.includes("/@floating-ui/")) return "radix-vendor";
+          if (id.includes("/react/") || id.includes("/react-dom/") || id.includes("/scheduler/") || id.includes("/wouter/") || id.includes("/@tanstack/")) return "react-vendor";
+          if (id.includes("/lucide-react/") || id.includes("/sonner/") || id.includes("/next-themes/")) return "ui-vendor";
+          if (id.includes("/tailwind-merge/") || id.includes("/clsx/") || id.includes("/copy-anything/") || id.includes("/is-what/")) return "utility-vendor";
+        },
+      },
+    },
   },
 });

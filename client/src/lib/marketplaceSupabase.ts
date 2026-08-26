@@ -385,6 +385,20 @@ async function assertPortableListingCanBePublished(client: ReturnType<typeof req
   if (!data || data.verification_status !== "verified") throw new Error("Votre identité doit être vérifiée avant de publier une annonce.");
 }
 
+async function verifyPortableListingPersistence(client: ReturnType<typeof requireSupabaseClient>, listingId: string, ownerId: string) {
+  const { data, error } = await client
+    .from("am_listings")
+    .select("id, owner_id, status")
+    .eq("id", listingId)
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data || data.status !== "published") {
+    throw new Error("La publication n’a pas été confirmée dans la marketplace. Réessayez avant de partager l’annonce.");
+  }
+}
+
 export async function createPortableListing(payload: Omit<PortableListing, "id" | "userId" | "status" | "createdAt" | "updatedAt">) {
   const client = requireSupabaseClient();
   const { data: { user }, error: authError } = await client.auth.getUser();
@@ -396,7 +410,9 @@ export async function createPortableListing(payload: Omit<PortableListing, "id" 
     city: payload.city, price: payload.price, currency: payload.currency, item_condition: payload.condition, media: payload.media, status: "published",
   }).select().single();
   if (error) throw error;
-  return normalizeListing(data as Record<string, unknown>);
+  const listing = normalizeListing(data as Record<string, unknown>);
+  await verifyPortableListingPersistence(client, listing.id, user.id);
+  return listing;
 }
 
 async function portableFileFromDataUrl(dataUrl: string, fileName: string) {
@@ -442,7 +458,9 @@ export async function createPortableListingWithMedia(
     status: "published",
   }).select().single();
   if (error) throw error;
-  return normalizeListing(data as Record<string, unknown>);
+  const listing = normalizeListing(data as Record<string, unknown>);
+  await verifyPortableListingPersistence(client, listing.id, user.id);
+  return listing;
 }
 
 export async function uploadPortableMedia(path: string, file: File, privateIdentity = false) {

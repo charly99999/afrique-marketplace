@@ -228,3 +228,11 @@
 - [x] Vérifier l’état public de `afrique-afrique.com` et ses enregistrements DNS sans modifier la zone.
 - [x] Préparer le rattachement de `afrique-afrique.com` à l’hébergement Afrique Marketplace choisi.
 - [x] Vérifier le domaine après propagation DNS et conserver les enregistrements e-mail existants.
+
+- [x] Respecter la règle de collaboration : travailler sur une branche dédiée, ne pas pousser ni fusionner vers `main` sans validation explicite de Marc-Arnaud.
+- [ ] Diagnostiquer et corriger la fausse validation de publication : une annonce ne doit réussir que si sa ligne est effectivement créée dans `am_listings` et visible par la requête publique.
+- [x] Proposer séparément toute modification de schéma Supabase, de flow d’authentification ou de logique de publication avant application en production.
+- [ ] Auditer l’erreur `Phone logins are disabled` et proposer une décision explicite entre activation du provider Phone Supabase et maintien de l’authentification interne par alias e-mail.
+- [x] Corriger les balises canonical et `og:url` pour utiliser `https://afrique-afrique.com/`.
+- [x] Mettre en œuvre un découpage dynamique des routes principales afin de réduire les chunks JavaScript dépassant 500 kB.
+- [ ] Fournir un rapport de branche avec tests, build, preuve de persistance et comparaison de bundle avant toute demande de fusion ou déploiement production.

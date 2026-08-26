@@ -13,6 +13,7 @@ import {
   getPortableListingDetail,
   getPortableSellerProfile,
   createPortableListing,
+  createPortableListingWithMedia,
   portableMediaUrl,
   reportPortableListing,
   setPortableFavorite,
@@ -176,13 +177,54 @@ describe("persistance inter-comptes des annonces", () => {
     });
     const profileChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { verification_status: "verified" }, error: null }) };
     profileChain.eq.mockReturnValue(profileChain);
+    const persistenceChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { id: listingRow.id, owner_id: "seller-uuid", status: "published" }, error: null }) };
+    persistenceChain.eq.mockReturnValue(persistenceChain);
     state.client = {
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "seller-uuid" } }, error: null }) },
-      from: vi.fn((table: string) => table === "am_profiles" ? { select: vi.fn(() => profileChain) } : { insert }),
+      from: vi.fn((table: string) => table === "am_profiles" ? { select: vi.fn(() => profileChain) } : { insert, select: vi.fn(() => persistenceChain) }),
     };
 
     await expect(createPortableListing({ title: "Appartement familial", description: "Annonce de test suffisamment détaillée.", category: "immobilier", city: "Abidjan", price: "12500000", currency: "XOF", condition: "bon_etat", media: [] })).resolves.toMatchObject({ status: "published" });
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({ owner_id: "seller-uuid", status: "published" }));
+    expect(persistenceChain.eq).toHaveBeenCalledWith("id", listingRow.id);
+    expect(persistenceChain.eq).toHaveBeenCalledWith("owner_id", "seller-uuid");
+  });
+
+  it("refuse une réussite si la relecture ne retrouve pas la ligne après insertion", async () => {
+    const insert = vi.fn().mockReturnValue({
+      select: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({ data: listingRow, error: null }),
+      })),
+    });
+    const profileChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { verification_status: "verified" }, error: null }) };
+    profileChain.eq.mockReturnValue(profileChain);
+    const persistenceChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+    persistenceChain.eq.mockReturnValue(persistenceChain);
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "seller-uuid" } }, error: null }) },
+      from: vi.fn((table: string) => table === "am_profiles" ? { select: vi.fn(() => profileChain) } : { insert, select: vi.fn(() => persistenceChain) }),
+    };
+
+    await expect(createPortableListing({ title: "Appartement familial", description: "Annonce de test suffisamment détaillée.", category: "immobilier", city: "Abidjan", price: "12500000", currency: "XOF", condition: "bon_etat", media: [] })).rejects.toThrow("publication n’a pas été confirmée");
+  });
+
+  it("applique la même relecture au parcours Publier avec médias", async () => {
+    const insert = vi.fn().mockReturnValue({
+      select: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({ data: listingRow, error: null }),
+      })),
+    });
+    const profileChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { verification_status: "verified" }, error: null }) };
+    profileChain.eq.mockReturnValue(profileChain);
+    const persistenceChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+    persistenceChain.eq.mockReturnValue(persistenceChain);
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "seller-uuid" } }, error: null }) },
+      from: vi.fn((table: string) => table === "am_profiles" ? { select: vi.fn(() => profileChain) } : { insert, select: vi.fn(() => persistenceChain) }),
+      storage: { from: vi.fn() },
+    };
+
+    await expect(createPortableListingWithMedia({ title: "Appartement familial", description: "Annonce de test suffisamment détaillée.", category: "immobilier", city: "Abidjan", price: "12500000", currency: "XOF", condition: "bon_etat" }, [])).rejects.toThrow("publication n’a pas été confirmée");
   });
 
   it("refuse explicitement la publication d’un profil non vérifié", async () => {
