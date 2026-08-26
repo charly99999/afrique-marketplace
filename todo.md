@@ -225,3 +225,6 @@
 - [ ] Ajouter une régression inter-comptes couvrant création, lecture publique et absence d’isolation accidentelle.
 - [ ] Revalider les annonces réelles des deux téléphones avant de déclarer la marketplace opérationnelle.
 - [x] Corriger le logo cassé visible dans le dernier aperçu et vérifier son affichage web, PWA et Android.
+- [x] Vérifier l’état public de `afrique-afrique.com` et ses enregistrements DNS sans modifier la zone.
+- [x] Préparer le rattachement de `afrique-afrique.com` à l’hébergement Afrique Marketplace choisi.
+- [x] Vérifier le domaine après propagation DNS et conserver les enregistrements e-mail existants.
