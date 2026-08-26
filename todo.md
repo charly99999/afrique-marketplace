@@ -216,8 +216,8 @@
 - [x] Afficher clairement dans Publier que la diffusion est bloquée tant que le profil n’est pas vérifié, avec accès direct à Vérification.
 - [ ] Rejouer le parcours compte → vérification IA → approbation → publication après correction, sans utiliser de données inventées.
 - [ ] Diagnostiquer pourquoi l’annonce Peugeot partagée n’est pas visible depuis l’autre compte sur le site et l’APK.
-- [ ] Vérifier la ligne réelle de l’annonce Peugeot, son statut, son propriétaire, les filtres du catalogue et les politiques RLS sans inventer de données.
-- [ ] Corriger la visibilité publique inter-comptes de toute annonce réellement publiée et ajouter une régression web/Android.
+- [x] Vérifier la ligne réelle de l’annonce Peugeot, son statut, son propriétaire, les filtres du catalogue et les politiques RLS sans inventer de données.
+- [x] Corriger la visibilité publique inter-comptes de toute annonce réellement publiée et ajouter une régression web/Android.
 - [ ] Revalider avec l’annonce Peugeot réelle, puis publier un checkpoint uniquement après preuve de visibilité.
 - [ ] Reproduire le problème signalé sur deux téléphones : comptes distincts, publication de chacun et visibilité croisée dans la base de production.
 - [x] Vérifier que web et APK embarquent exactement le même projet Supabase, le même mode portable et les mêmes règles de lecture publique.

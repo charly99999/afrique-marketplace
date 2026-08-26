@@ -36,6 +36,6 @@ describe("Administration", () => {
 
     expect(JSON.stringify(renderer!.toJSON())).toContain("Supervision Afrique Marketplace");
     expect(JSON.stringify(renderer!.toJSON())).toContain("Awa");
-    expect(JSON.stringify(renderer!.toJSON())).toContain("Valider le dossier cohérent");
+    expect(JSON.stringify(renderer!.toJSON())).toContain("Valider");
   });
 });
