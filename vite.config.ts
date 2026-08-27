@@ -167,6 +167,18 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("/node_modules/react/") || id.includes("/node_modules/react-dom/") || id.includes("/node_modules/scheduler/") || id.includes("/node_modules/@radix-ui/")) return "framework-vendor";
+          if (id.includes("/@supabase/")) return "supabase-vendor";
+          if (id.includes("/@trpc/") || id.includes("/superjson/")) return "trpc-vendor";
+          if (id.includes("/lucide-react/") || id.includes("/sonner/") || id.includes("/next-themes/")) return "ui-vendor";
+          if (id.includes("/tailwind-merge/") || id.includes("/clsx/") || id.includes("/copy-anything/") || id.includes("/is-what/")) return "utility-vendor";
+        },
+      },
+    },
   },
   server: {
     host: true,
