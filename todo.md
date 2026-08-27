@@ -305,3 +305,4 @@
 
 - [x] Corriger le service worker `v1` qui peut servir un shell HTML obsolète après une nouvelle publication et provoquer un écran blanc.
 - [ ] Vérifier le domaine officiel après correction avec un navigateur propre et contrôler les endpoints publics.
+- [x] Corriger la circularité de chunks React/Radix : les motifs Vite trop larges classent certains modules Radix dans `react-vendor`, ce qui provoque `forwardRef` indéfini en production.
