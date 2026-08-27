@@ -563,7 +563,19 @@ export async function retryPortableVerification(verificationId: string) {
   return invokePortableVerificationAnalysis(client, verification);
 }
 
-export async function submitPortableVerification(payload: { documentType: "cni" | "passeport" | "permis" | "carte_scolaire"; documentData: string; selfieData: string }) {
+export type PortableKycPreflight = {
+  documentQuality: "pass" | "fail" | "unknown";
+  ocrAvailable: boolean;
+  ocrTextLength: number;
+  documentFaceDetected: boolean;
+  selfieFaceDetected: boolean;
+  liveness: "passed" | "not_checked";
+  comparisonStatus: "pass" | "fail" | "unknown";
+  comparisonSimilarity: number | null;
+  comparisonModel: string;
+};
+
+export async function submitPortableVerification(payload: { documentType: "cni" | "passeport" | "permis" | "carte_scolaire"; documentData: string; selfieData: string; preflight?: PortableKycPreflight }) {
   const client = requireSupabaseClient();
   const { data: { user }, error: authError } = await client.auth.getUser();
   if (authError) throw authError;
@@ -586,7 +598,9 @@ export async function submitPortableVerification(payload: { documentType: "cni" 
   }).select("id, status, admin_note, ai_review, ai_reviewed_at").single();
   if (error) throw error;
   const verification = normalizeVerification(data as Record<string, unknown>);
-  return invokePortableVerificationAnalysis(client, verification);
+  const analysis = await client.functions.invoke("verify-identity", { body: { verificationId: verification.id, preflight: payload.preflight ?? null } });
+  const analysisResult = await confirmPortableVerificationAnalysis(client, verification, analysis.error);
+  return analysisResult;
 }
 
 export async function listPortableConversations() {

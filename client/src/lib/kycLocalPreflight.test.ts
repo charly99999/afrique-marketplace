@@ -15,8 +15,13 @@ describe("pré-contrôles KYC locaux", () => {
     expect(localDocumentQuality(data).quality).toBe("pass");
   });
 
-  it("considère tout résultat local incomplet comme non approuvable", () => {
-    const uncertain: Pick<LocalKycPreflight, "safeToSubmit"> = { safeToSubmit: false };
-    expect(isLocalPreflightBlocking(uncertain)).toBe(true);
+  it("bloque uniquement un document manifestement invalide", () => {
+    const invalid: Pick<LocalKycPreflight, "document"> = { document: { quality: "fail", ocrText: "", ocrAvailable: false, faceCount: null, faceDetected: false } };
+    expect(isLocalPreflightBlocking(invalid)).toBe(true);
+  });
+
+  it("laisse les contrôles incomplets partir en revue humaine", () => {
+    const incomplete: Pick<LocalKycPreflight, "document"> = { document: { quality: "unknown", ocrText: "", ocrAvailable: false, faceCount: null, faceDetected: false } };
+    expect(isLocalPreflightBlocking(incomplete)).toBe(false);
   });
 });

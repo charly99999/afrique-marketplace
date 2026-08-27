@@ -4,7 +4,7 @@ import { MarketplaceShell } from "@/components/MarketplaceShell";
 import { QueryErrorState } from "@/components/QueryErrorState";
 import { isSupabaseMode } from "@/lib/backendMode";
 import { fileToDataUrl, mediaErrorMessage } from "@/lib/media";
-import { getMyPortableProfile, getMyPortableVerification, retryPortableVerification, submitPortableVerification, type PortableVerification } from "@/lib/marketplaceSupabase";
+import { getMyPortableProfile, getMyPortableVerification, retryPortableVerification, submitPortableVerification, type PortableKycPreflight, type PortableVerification } from "@/lib/marketplaceSupabase";
 import { isLocalPreflightBlocking, runLocalKycPreflight } from "@/lib/kycLocalPreflight";
 import { trpc } from "@/lib/trpc";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -80,8 +80,9 @@ export default function Verification() {
     if (isSupabaseMode) {
       setMediaIssue(undefined);
       setLocalPreflightPending(true);
+      let preflight: Awaited<ReturnType<typeof runLocalKycPreflight>>;
       try {
-        const preflight = await runLocalKycPreflight(documentData, selfieData, selfieLiveness);
+        preflight = await runLocalKycPreflight(documentData, selfieData, selfieLiveness);
         if (isLocalPreflightBlocking(preflight)) {
           setMediaIssue(preflight.reasons[0] || "Les pré-contrôles locaux demandent une nouvelle capture.");
           return;
@@ -89,7 +90,18 @@ export default function Verification() {
       } finally {
         setLocalPreflightPending(false);
       }
-      portableSubmit.mutate({ documentType, documentData, selfieData });
+      const preflightPayload: PortableKycPreflight = {
+        documentQuality: preflight.document.quality,
+        ocrAvailable: preflight.document.ocrAvailable,
+        ocrTextLength: preflight.document.ocrText.length,
+        documentFaceDetected: preflight.document.faceDetected,
+        selfieFaceDetected: preflight.selfie.faceDetected,
+        liveness: preflight.selfie.liveness,
+        comparisonStatus: preflight.faceComparison.status,
+        comparisonSimilarity: preflight.faceComparison.similarity,
+        comparisonModel: preflight.faceComparison.model,
+      };
+      portableSubmit.mutate({ documentType, documentData, selfieData, preflight: preflightPayload });
       return;
     }
     legacySubmit.mutate({ documentType, documentData, selfieData });

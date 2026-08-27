@@ -18,7 +18,8 @@ Deno.serve(async (request) => {
   const { data: { user } } = await admin.auth.getUser(token);
   if (!user) return Response.json({ error: "Session invalide." }, { status: 401, headers: corsHeaders });
 
-  const { verificationId } = await request.json().catch(() => ({}));
+  const body = await request.json().catch(() => ({}));
+  const verificationId = body?.verificationId;
   if (typeof verificationId !== "string" || !verificationId) return Response.json({ error: "Identifiant de dossier invalide." }, { status: 400, headers: corsHeaders });
   const { data: verification } = await admin.from("am_identity_verifications").select("id,user_id,document_type,document_path,selfie_path,status").eq("id", verificationId).eq("user_id", user.id).eq("status", "pending").single();
   if (!verification) return Response.json({ error: "Dossier introuvable ou déjà traité." }, { status: 404, headers: corsHeaders });
@@ -37,11 +38,25 @@ Deno.serve(async (request) => {
     if (error) throw new Error("La transition de vérification n’a pas été enregistrée.");
   };
 
-  const review: IdentityReview = unavailableIdentityReview(
-    "Aucun fournisseur distant n’est requis : les pré-contrôles locaux doivent être complétés et toute décision positive reste soumise à une revue fondée sur les preuves."
-  );
+  const rawPreflight = body?.preflight;
+  const preflight = rawPreflight && typeof rawPreflight === "object" ? {
+    source: "browser_preflight_untrusted",
+    documentQuality: typeof rawPreflight.documentQuality === "string" ? rawPreflight.documentQuality : "unknown",
+    ocrAvailable: rawPreflight.ocrAvailable === true,
+    ocrTextLength: Number.isFinite(rawPreflight.ocrTextLength) ? Math.max(0, Math.min(10000, Number(rawPreflight.ocrTextLength))) : 0,
+    documentFaceDetected: rawPreflight.documentFaceDetected === true,
+    selfieFaceDetected: rawPreflight.selfieFaceDetected === true,
+    liveness: rawPreflight.liveness === "passed" ? "passed" : "not_checked",
+    comparisonStatus: ["pass", "fail", "unknown"].includes(rawPreflight.comparisonStatus) ? rawPreflight.comparisonStatus : "unknown",
+    comparisonSimilarity: typeof rawPreflight.comparisonSimilarity === "number" && Number.isFinite(rawPreflight.comparisonSimilarity) ? Math.max(-1, Math.min(1, rawPreflight.comparisonSimilarity)) : null,
+    comparisonModel: typeof rawPreflight.comparisonModel === "string" ? rawPreflight.comparisonModel.slice(0, 120) : "unknown",
+  } : null;
+  const review: IdentityReview = {
+    ...unavailableIdentityReview("Les pré-contrôles locaux sont conservés comme indicateurs ; la décision finale est obligatoirement humaine."),
+    preflight,
+  };
   try {
-    await applyDecision(decideIdentityVerification(review));
+    await applyDecision(review);
   } catch (error) {
     console.error("verify-identity pending transition failed", error instanceof Error ? error.message : "unknown");
     return Response.json({ error: "Le statut de vérification n’a pas pu être confirmé." }, { status: 500, headers: corsHeaders });

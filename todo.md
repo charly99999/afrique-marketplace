@@ -269,3 +269,36 @@
 - [x] Implémenter un liveness actif et conserver `PENDING` si le liveness n’est pas suffisamment fiable.
 - [x] Tester le modèle et le liveness sur des images de test non réelles, sans approuver d’identité réelle.
 - [x] Revalider les quatre documents, le selfie caméra, la photo de profil, RLS, Storage, bundle, TypeScript et l’absence de Gemini.
+
+- [ ] Identifier un projet Supabase de test distinct et confirmer qu’il ne s’agit pas de la production.
+- [ ] Exécuter les migrations uniquement dans le projet Supabase de test et y déployer `verify-identity`.
+- [ ] Créer deux comptes de test dédiés et exécuter les parcours KYC, publication et messagerie.
+- [ ] Vérifier les refus croisés RLS/Storage et la visibilité publiée/non publiée sans modifier de données réelles.
+- [ ] Vérifier les scénarios KYC valide, incomplet, liveness absent, comparaison non concluante et blocage de `VERIFIED` forcé côté navigateur.
+- [ ] Vérifier la caméra Android réelle si un appareil de test autorisé est disponible.
+- [ ] Rédiger le rapport contrôlé A–J sans fusion, migration ou déploiement de production.
+
+- [ ] Créer le projet Supabase `Afrimaket Staging` sans utiliser la production, Afrique-business ou apprend-moi.
+- [ ] Vérifier l’identifiant, l’URL, la région et l’état du nouveau staging avant toute opération.
+- [ ] Préparer les variables staging sans afficher ni modifier les secrets de production.
+- [ ] Appliquer uniquement au staging les migrations et la fonction prévues après vérification d’isolation.
+
+- [ ] Diagnostiquer en lecture seule le projet Supabase `apprend-moi` (`vaekzzbalkdtittvhtmt`) : état, tables, données, Auth, Storage et Edge Functions.
+- [ ] Évaluer si `apprend-moi` peut être réactivé et servir de staging sans risque de perte de données.
+
+- [ ] Contrôler la PR et vérifier que les migrations de production sont non destructives avant fusion.
+- [ ] Appliquer les migrations autorisées uniquement au projet Supabase de production Afrimaket, sans supprimer de données.
+- [ ] Déployer `verify-identity` en production et vérifier son état actif.
+- [ ] Fusionner la PR validée dans `main` sans toucher aux autres projets.
+- [ ] Vérifier le déploiement Vercel et les endpoints publics.
+- [ ] Exécuter les tests réels inscription, KYC, publication, visibilité publique, messagerie, RLS et Storage sans contourner la sécurité.
+- [ ] Corriger uniquement les erreurs non destructives puis rédiger le rapport final unique.
+
+- [ ] Corriger le blocage découvert avant déploiement : `verify-identity` ne doit pas forcer `pending` pour tous les dossiers et doit appliquer une décision serveur sûre fondée sur des résultats vérifiables.
+
+- [ ] Finaliser `verify-identity` en statut `pending` avec pré-contrôles enregistrés et revue humaine obligatoire.
+- [ ] Finaliser l’interface admin Vérifications KYC avec aperçu privé et indicateurs non décisionnels.
+- [ ] Vérifier que seuls les administrateurs autorisés peuvent approuver ou refuser, et que le navigateur ne peut jamais définir `verified`.
+- [ ] Vérifier la synchronisation approbation → profil vérifié → selfie comme photo de profil, et le rejet sans photo KYC publique.
+- [ ] Vérifier RLS, Storage, annonces et conversations sans réexécuter les migrations déjà appliquées.
+- [ ] Lancer tous les tests et le build final sans supprimer ni modifier de données réelles.

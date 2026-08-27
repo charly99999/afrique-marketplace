@@ -111,6 +111,6 @@ export async function runLocalKycPreflight(documentData: string, selfieData: str
   };
 }
 
-export function isLocalPreflightBlocking(result: Pick<LocalKycPreflight, "safeToSubmit">) {
-  return !result.safeToSubmit;
+export function isLocalPreflightBlocking(result: Pick<LocalKycPreflight, "document">) {
+  return result.document.quality === "fail";
 }
