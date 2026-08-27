@@ -196,16 +196,12 @@ describe("flux métier marketplace", () => {
     expect(await dbMock.getProfile(22)).toEqual({ userId: 22, verificationStatus: "verified", profilePhotoKey: "verifications/22/live-selfie.jpg" });
   });
 
-  it("applique une décision automatique sûre, enregistre la revue et alerte le membre", async () => {
-    const review = { recommendation: "approve" as const, confidence: 92, documentReadable: true, selfieFaceVisible: true, profileInformationConsistent: true, reasons: ["Document lisible et informations cohérentes."] };
+  it("conserve le dossier en attente sans preuve serveur indépendante", async () => {
     dbMock.getLatestVerification.mockResolvedValueOnce({ id: 18, status: "pending" });
     dbMock.getVerificationDossier.mockResolvedValueOnce({ id: 18, userId: 11, documentType: "cni", documentKey: "verifications/11/document.jpg", selfieKey: "verifications/11/selfie.jpg", firstName: "Amadou", lastName: "Diallo", city: "Dakar" });
-    analyzeVerificationWithAiMock.mockResolvedValueOnce(review);
-    dbMock.applyAutomatedVerificationDecision.mockResolvedValueOnce({ userId: 11, selfieKey: "verifications/11/selfie.jpg" });
 
-    await expect(caller().verification.analyzeMine()).resolves.toMatchObject({ id: 18, status: "approved", aiStatus: "decided" });
-    expect(dbMock.saveAiVerificationReview).toHaveBeenCalledWith(18, review);
-    expect(dbMock.applyAutomatedVerificationDecision).toHaveBeenCalledWith(18, "approved", "Vérification automatisée : dossier cohérent.");
-    expect(dbMock.createNotification).toHaveBeenCalledWith({ userId: 11, type: "verification", title: "Profil vérifié", body: "Votre badge vérifié est désormais actif." });
+    await expect(caller().verification.analyzeMine()).resolves.toMatchObject({ id: 18, status: "pending", aiStatus: "manual_review" });
+    expect(dbMock.saveAiVerificationReview).toHaveBeenCalledWith(18, expect.objectContaining({ recommendation: "manual_review", confidence: 0 }));
+    expect(dbMock.applyAutomatedVerificationDecision).not.toHaveBeenCalled();
   });
 });

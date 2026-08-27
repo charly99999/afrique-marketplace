@@ -307,3 +307,6 @@
 - [x] Vérifier le domaine officiel après correction avec un navigateur propre et contrôler les endpoints publics.
 - [x] Corriger la circularité de chunks React/Radix : les motifs Vite trop larges classent certains modules Radix dans `react-vendor`, ce qui provoque `forwardRef` indéfini en production.
 - [x] Corriger la route favicon : `/favicon.ico` ne doit pas être réécrite vers `index.html` et doit servir une vraie icône avec son type MIME image.
+- [ ] Appliquer intégralement les instructions du fichier utilisateur `pasted_content.txt` et valider les changements associés.
+- [x] Corriger les cartes Accueil/Explorer pour résoudre les médias via Supabase en mode portable et conserver le résolveur legacy.
+- [ ] Mettre en place une validation KYC automatique uniquement après installation et validation d’un modèle serveur indépendant ; en l’état, les pré-contrôles navigateur restent des indicateurs non fiables et le dossier reste `pending`/revue humaine.
