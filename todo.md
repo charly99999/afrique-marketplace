@@ -312,5 +312,6 @@
 - [ ] Mettre en place une validation KYC automatique uniquement après installation et validation d’un modèle serveur indépendant ; en l’état, les pré-contrôles navigateur restent des indicateurs non fiables et le dossier reste `pending`/revue humaine.
 - [x] Configurer les variables publiques `VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY` dans l’aperçu afin d’éviter l’écran d’erreur de montage sans exposer de clé privilégiée.
 - [x] Récupérer depuis la configuration connectée les valeurs publiques Supabase et les renseigner dans l’aperçu sans exposer de clé privée.
-- [ ] Vérifier C300 en production sur Explorer, détail, actualisation et mobile responsive, puis comparer avec l’APK et reconstruire celle-ci si une divergence est confirmée.
-- [ ] Corriger le 404 de production sur `/explorer` et les routes dynamiques en garantissant la réécriture SPA vers `index.html` sur le domaine officiel.
+- [x] Vérifier C300 en production sur Explorer, détail, actualisation et mobile responsive, puis comparer avec l’APK et reconstruire celle-ci si une divergence est confirmée. Résultat : C300 et toute annonce publiée sont absents de la base ; Explorer fonctionne après déploiement, le détail/média C300 ne peut donc pas être testé sans créer ou restaurer une annonce réelle.
+- [x] Corriger le 404 de production sur `/explorer` et les routes dynamiques en garantissant la réécriture SPA vers `index.html` sur le domaine officiel.
+- [x] Synchroniser le correctif routage/C300 vers le dépôt GitHub réellement connecté à Vercel, puis vérifier le déploiement du domaine officiel.
