@@ -1,7 +1,7 @@
 export type BackendMode = "legacy" | "supabase";
 
 export function resolveBackendMode(value?: string): BackendMode {
-  return value?.trim().toLowerCase() === "supabase" ? "supabase" : "legacy";
+  return value?.trim().toLowerCase() === "legacy" ? "legacy" : "supabase";
 }
 
 export const backendMode = resolveBackendMode(import.meta.env.VITE_BACKEND_MODE);

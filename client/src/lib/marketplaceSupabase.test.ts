@@ -13,8 +13,10 @@ import {
   getPortableListingDetail,
   getPortableSellerProfile,
   createPortableListing,
+  createPortableListingWithMedia,
   portableMediaUrl,
   reportPortableListing,
+  retryPortableVerification,
   setPortableFavorite,
   signInWithPhoneAndPassword,
   signUpWithPhoneAndPassword,
@@ -166,6 +168,98 @@ describe("authentification par téléphone sans SMS", () => {
   });
 });
 
+describe("reprise sécurisée de vérification d’identité", () => {
+  it("relance le même dossier, puis confirme l’état réellement persisté sans créer de nouvelle preuve", async () => {
+    const pendingVerification = { id: "verification-uuid", status: "pending", admin_note: null, ai_reviewed_at: null };
+    const reviewedVerification = { ...pendingVerification, ai_reviewed_at: "2026-08-26T12:15:03.000Z" };
+    const maybeSingle = vi.fn()
+      .mockResolvedValueOnce({ data: pendingVerification, error: null })
+      .mockResolvedValueOnce({ data: reviewedVerification, error: null });
+    const chain = { eq: vi.fn(), maybeSingle };
+    chain.eq.mockReturnValue(chain);
+    const invoke = vi.fn().mockResolvedValue({ data: { status: "pending" }, error: null });
+    const insert = vi.fn();
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "member-uuid" } }, error: null }) },
+      from: vi.fn(() => ({ select: vi.fn(() => chain), insert })),
+      functions: { invoke },
+    };
+
+    await expect(retryPortableVerification("verification-uuid")).resolves.toMatchObject({
+      verification: { id: "verification-uuid", status: "pending", aiReviewedAt: "2026-08-26T12:15:03.000Z" },
+      analysisError: null,
+    });
+
+    expect(invoke).toHaveBeenCalledWith("verify-identity", { body: { verificationId: "verification-uuid" } });
+    expect(insert).not.toHaveBeenCalled();
+    expect(maybeSingle).toHaveBeenCalledTimes(2);
+  });
+
+  it("n’annonce pas de réussite lorsque la fonction échoue avant qu’une analyse persistée soit confirmée", async () => {
+    const pendingVerification = { id: "verification-uuid", status: "pending", admin_note: null, ai_reviewed_at: null };
+    const maybeSingle = vi.fn()
+      .mockResolvedValueOnce({ data: pendingVerification, error: null })
+      .mockResolvedValueOnce({ data: pendingVerification, error: null });
+    const chain = { eq: vi.fn(), maybeSingle };
+    chain.eq.mockReturnValue(chain);
+    const invoke = vi.fn().mockResolvedValue({ data: null, error: new Error("service unavailable") });
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "member-uuid" } }, error: null }) },
+      from: vi.fn(() => ({ select: vi.fn(() => chain) })),
+      functions: { invoke },
+    };
+
+    await expect(retryPortableVerification("verification-uuid")).resolves.toMatchObject({
+      verification: { id: "verification-uuid", status: "pending", aiReviewedAt: null },
+      analysisError: expect.stringContaining("n’a pas pu être confirmée"),
+    });
+  });
+
+  it("autorise une reprise du même dossier après une indisponibilité documentée du fournisseur", async () => {
+    const unavailableVerification = {
+      id: "verification-uuid",
+      status: "pending",
+      admin_note: null,
+      ai_reviewed_at: "2026-08-26T12:15:03.000Z",
+      ai_review: { analysisAvailable: false, reasons: ["Le fournisseur d’analyse automatique est momentanément indisponible."] },
+    };
+    const confirmedReview = { ...unavailableVerification, ai_review: { analysisAvailable: true, reasons: [] } };
+    const maybeSingle = vi.fn()
+      .mockResolvedValueOnce({ data: unavailableVerification, error: null })
+      .mockResolvedValueOnce({ data: confirmedReview, error: null });
+    const chain = { eq: vi.fn(), maybeSingle };
+    chain.eq.mockReturnValue(chain);
+    const invoke = vi.fn().mockResolvedValue({ data: { status: "pending" }, error: null });
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "member-uuid" } }, error: null }) },
+      from: vi.fn(() => ({ select: vi.fn(() => chain) })),
+      functions: { invoke },
+    };
+
+    await expect(retryPortableVerification("verification-uuid")).resolves.toMatchObject({
+      verification: { id: "verification-uuid", status: "pending", analysisAvailable: true, retryAllowed: false },
+      analysisError: null,
+    });
+    expect(invoke).toHaveBeenCalledWith("verify-identity", { body: { verificationId: "verification-uuid" } });
+  });
+
+  it("refuse une nouvelle analyse automatique lorsqu’un dossier est déjà en revue humaine", async () => {
+    const reviewedVerification = { id: "verification-uuid", status: "pending", admin_note: null, ai_reviewed_at: "2026-08-26T12:15:03.000Z" };
+    const maybeSingle = vi.fn().mockResolvedValue({ data: reviewedVerification, error: null });
+    const chain = { eq: vi.fn(), maybeSingle };
+    chain.eq.mockReturnValue(chain);
+    const invoke = vi.fn();
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "member-uuid" } }, error: null }) },
+      from: vi.fn(() => ({ select: vi.fn(() => chain) })),
+      functions: { invoke },
+    };
+
+    await expect(retryPortableVerification("verification-uuid")).rejects.toThrow("déjà en revue humaine");
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
 
 describe("persistance inter-comptes des annonces", () => {
   it("écrit explicitement une annonce publiée et renvoie la ligne persistée", async () => {
@@ -176,13 +270,54 @@ describe("persistance inter-comptes des annonces", () => {
     });
     const profileChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { verification_status: "verified" }, error: null }) };
     profileChain.eq.mockReturnValue(profileChain);
+    const persistenceChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { id: listingRow.id, owner_id: "seller-uuid", status: "published" }, error: null }) };
+    persistenceChain.eq.mockReturnValue(persistenceChain);
     state.client = {
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "seller-uuid" } }, error: null }) },
-      from: vi.fn((table: string) => table === "am_profiles" ? { select: vi.fn(() => profileChain) } : { insert }),
+      from: vi.fn((table: string) => table === "am_profiles" ? { select: vi.fn(() => profileChain) } : { insert, select: vi.fn(() => persistenceChain) }),
     };
 
     await expect(createPortableListing({ title: "Appartement familial", description: "Annonce de test suffisamment détaillée.", category: "immobilier", city: "Abidjan", price: "12500000", currency: "XOF", condition: "bon_etat", media: [] })).resolves.toMatchObject({ status: "published" });
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({ owner_id: "seller-uuid", status: "published" }));
+    expect(persistenceChain.eq).toHaveBeenCalledWith("id", listingRow.id);
+    expect(persistenceChain.eq).toHaveBeenCalledWith("owner_id", "seller-uuid");
+  });
+
+  it("refuse une réussite si la relecture ne retrouve pas la ligne après insertion", async () => {
+    const insert = vi.fn().mockReturnValue({
+      select: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({ data: listingRow, error: null }),
+      })),
+    });
+    const profileChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { verification_status: "verified" }, error: null }) };
+    profileChain.eq.mockReturnValue(profileChain);
+    const persistenceChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+    persistenceChain.eq.mockReturnValue(persistenceChain);
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "seller-uuid" } }, error: null }) },
+      from: vi.fn((table: string) => table === "am_profiles" ? { select: vi.fn(() => profileChain) } : { insert, select: vi.fn(() => persistenceChain) }),
+    };
+
+    await expect(createPortableListing({ title: "Appartement familial", description: "Annonce de test suffisamment détaillée.", category: "immobilier", city: "Abidjan", price: "12500000", currency: "XOF", condition: "bon_etat", media: [] })).rejects.toThrow("publication n’a pas été confirmée");
+  });
+
+  it("applique la même relecture au parcours Publier avec médias", async () => {
+    const insert = vi.fn().mockReturnValue({
+      select: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({ data: listingRow, error: null }),
+      })),
+    });
+    const profileChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: { verification_status: "verified" }, error: null }) };
+    profileChain.eq.mockReturnValue(profileChain);
+    const persistenceChain = { eq: vi.fn(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+    persistenceChain.eq.mockReturnValue(persistenceChain);
+    state.client = {
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "seller-uuid" } }, error: null }) },
+      from: vi.fn((table: string) => table === "am_profiles" ? { select: vi.fn(() => profileChain) } : { insert, select: vi.fn(() => persistenceChain) }),
+      storage: { from: vi.fn() },
+    };
+
+    await expect(createPortableListingWithMedia({ title: "Appartement familial", description: "Annonce de test suffisamment détaillée.", category: "immobilier", city: "Abidjan", price: "12500000", currency: "XOF", condition: "bon_etat" }, [])).rejects.toThrow("publication n’a pas été confirmée");
   });
 
   it("refuse explicitement la publication d’un profil non vérifié", async () => {

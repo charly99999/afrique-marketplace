@@ -1,4 +1,4 @@
-const CANONICAL_ORIGIN = "https://afrique-marketplace.vercel.app";
+export const CANONICAL_ORIGIN = "https://afrique-afrique.com";
 
 export type SeoMetadata = {
   title: string;

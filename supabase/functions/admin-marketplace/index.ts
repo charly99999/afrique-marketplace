@@ -87,13 +87,17 @@ Deno.serve(async (request) => {
     if (!verificationId || !["approved", "rejected"].includes(decision)) return respond({ error: "Décision invalide." }, 400);
     if (decision === "approved" && !confirmedConsistent) return respond({ error: "La confirmation de cohérence est requise." }, 400);
     if (decision === "rejected" && note.length < 8) return respond({ error: "Un motif de refus précis est requis." }, 400);
-    const { data: verification } = await admin.from("am_identity_verifications").select("user_id, selfie_path").eq("id", verificationId).eq("status", "pending").maybeSingle();
+    const { data: verification } = await admin.from("am_identity_verifications").select("user_id, selfie_path, ai_review").eq("id", verificationId).eq("status", "pending").maybeSingle();
     if (!verification) return respond({ error: "Dossier introuvable ou déjà traité." }, 404);
-    const { error: reviewError } = await admin.from("am_identity_verifications").update({ status: decision, admin_note: decision === "rejected" ? note : null }).eq("id", verificationId);
-    if (reviewError) return respond({ error: "Décision non enregistrée." }, 500);
-    if (decision === "approved") await admin.from("am_profiles").update({ verification_status: "verified", profile_photo_path: verification.selfie_path }).eq("id", verification.user_id);
-    else await admin.from("am_profiles").update({ verification_status: "rejected" }).eq("id", verification.user_id);
-    await admin.from("am_notifications").insert({ user_id: verification.user_id, type: "verification", title: decision === "approved" ? "Profil vérifié" : "Nouvelle soumission requise", body: decision === "approved" ? "Votre badge vérifié est désormais actif." : note });
+    const previousReview = verification.ai_review && typeof verification.ai_review === "object" ? verification.ai_review : {};
+    const review = { ...previousReview, manualReview: { decision, confirmedConsistent: decision === "approved", reviewedAt: new Date().toISOString(), reviewerId: user.id } };
+    const { data: applied, error: reviewError } = await admin.rpc("am_apply_identity_decision", {
+      p_verification_id: verificationId,
+      p_decision: decision,
+      p_review: review,
+      p_note: decision === "rejected" ? note : null,
+    });
+    if (reviewError || applied !== decision) return respond({ error: "Décision non enregistrée." }, 500);
     return respond({ status: decision });
   }
 

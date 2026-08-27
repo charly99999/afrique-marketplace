@@ -385,6 +385,20 @@ async function assertPortableListingCanBePublished(client: ReturnType<typeof req
   if (!data || data.verification_status !== "verified") throw new Error("Votre identité doit être vérifiée avant de publier une annonce.");
 }
 
+async function verifyPortableListingPersistence(client: ReturnType<typeof requireSupabaseClient>, listingId: string, ownerId: string) {
+  const { data, error } = await client
+    .from("am_listings")
+    .select("id, owner_id, status")
+    .eq("id", listingId)
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data || data.status !== "published") {
+    throw new Error("La publication n’a pas été confirmée dans la marketplace. Réessayez avant de partager l’annonce.");
+  }
+}
+
 export async function createPortableListing(payload: Omit<PortableListing, "id" | "userId" | "status" | "createdAt" | "updatedAt">) {
   const client = requireSupabaseClient();
   const { data: { user }, error: authError } = await client.auth.getUser();
@@ -396,7 +410,9 @@ export async function createPortableListing(payload: Omit<PortableListing, "id" 
     city: payload.city, price: payload.price, currency: payload.currency, item_condition: payload.condition, media: payload.media, status: "published",
   }).select().single();
   if (error) throw error;
-  return normalizeListing(data as Record<string, unknown>);
+  const listing = normalizeListing(data as Record<string, unknown>);
+  await verifyPortableListingPersistence(client, listing.id, user.id);
+  return listing;
 }
 
 async function portableFileFromDataUrl(dataUrl: string, fileName: string) {
@@ -442,7 +458,9 @@ export async function createPortableListingWithMedia(
     status: "published",
   }).select().single();
   if (error) throw error;
-  return normalizeListing(data as Record<string, unknown>);
+  const listing = normalizeListing(data as Record<string, unknown>);
+  await verifyPortableListingPersistence(client, listing.id, user.id);
+  return listing;
 }
 
 export async function uploadPortableMedia(path: string, file: File, privateIdentity = false) {
@@ -457,25 +475,107 @@ export type PortableVerification = {
   status: "pending" | "approved" | "rejected";
   adminNote: string | null;
   aiReviewedAt: string | null;
+  analysisAvailable: boolean | null;
+  retryAllowed: boolean;
+};
+
+export type PortableVerificationAnalysisResult = {
+  verification: PortableVerification;
+  analysisError: string | null;
 };
 
 function normalizeVerification(row: Record<string, unknown>): PortableVerification {
+  const review = row.ai_review && typeof row.ai_review === "object" ? row.ai_review as Record<string, unknown> : null;
+  const reasons = Array.isArray(review?.reasons) ? review.reasons.filter((reason): reason is string => typeof reason === "string") : [];
+  const analysisAvailable = typeof review?.analysisAvailable === "boolean" ? review.analysisAvailable : null;
+  const aiReviewedAt = row.ai_reviewed_at ? String(row.ai_reviewed_at) : null;
   return {
     id: String(row.id),
     status: row.status as PortableVerification["status"],
     adminNote: row.admin_note ? String(row.admin_note) : null,
-    aiReviewedAt: row.ai_reviewed_at ? String(row.ai_reviewed_at) : null,
+    aiReviewedAt,
+    analysisAvailable,
+    retryAllowed: row.status === "pending" && (!aiReviewedAt || analysisAvailable === false || reasons.some(reason => reason.includes("fournisseur d’analyse automatique est momentanément indisponible"))),
   };
 }
 
 export async function getMyPortableVerification() {
   const client = requireSupabaseClient();
-  const { data, error } = await client.from("am_identity_verifications").select("id, status, admin_note, ai_reviewed_at, created_at").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data, error } = await client.from("am_identity_verifications").select("id, status, admin_note, ai_review, ai_reviewed_at, created_at").order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw error;
   return data ? normalizeVerification(data as Record<string, unknown>) : null;
 }
 
-export async function submitPortableVerification(payload: { documentType: "cni" | "passeport" | "permis" | "carte_scolaire"; documentData: string; selfieData: string }) {
+async function confirmPortableVerificationAnalysis(
+  client: ReturnType<typeof requireSupabaseClient>,
+  verification: PortableVerification,
+  invokeError: unknown,
+): Promise<PortableVerificationAnalysisResult> {
+  const { data, error } = await client
+    .from("am_identity_verifications")
+    .select("id, status, admin_note, ai_review, ai_reviewed_at")
+    .eq("id", verification.id)
+    .maybeSingle();
+  if (error) throw error;
+
+  const persisted = data ? normalizeVerification(data as Record<string, unknown>) : verification;
+  if (invokeError) {
+    return {
+      verification: persisted,
+      analysisError: "L’analyse automatique n’a pas pu être confirmée. Votre dossier est conservé ; vous pourrez relancer l’analyse sécurisée sans envoyer de nouvelles preuves.",
+    };
+  }
+  if (persisted.status === "pending" && !persisted.aiReviewedAt) {
+    return {
+      verification: persisted,
+      analysisError: "La réponse d’analyse n’a pas encore été confirmée. Votre dossier est conservé ; vous pourrez relancer l’analyse sécurisée sans envoyer de nouvelles preuves.",
+    };
+  }
+  return { verification: persisted, analysisError: null };
+}
+
+async function invokePortableVerificationAnalysis(
+  client: ReturnType<typeof requireSupabaseClient>,
+  verification: PortableVerification,
+) {
+  const { error } = await client.functions.invoke("verify-identity", { body: { verificationId: verification.id } });
+  return confirmPortableVerificationAnalysis(client, verification, error);
+}
+
+export async function retryPortableVerification(verificationId: string) {
+  const client = requireSupabaseClient();
+  const { data: { user }, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (!user) throw new Error("Connexion requise.");
+
+  const { data, error } = await client
+    .from("am_identity_verifications")
+    .select("id, status, admin_note, ai_review, ai_reviewed_at")
+    .eq("id", verificationId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Dossier de vérification introuvable.");
+
+  const verification = normalizeVerification(data as Record<string, unknown>);
+  if (verification.status !== "pending") throw new Error("Ce dossier a déjà reçu une décision et ne peut pas être relancé.");
+  if (!verification.retryAllowed) throw new Error("Ce dossier est déjà en revue humaine ; aucune nouvelle analyse automatique n’est nécessaire.");
+
+  return invokePortableVerificationAnalysis(client, verification);
+}
+
+export type PortableKycPreflight = {
+  documentQuality: "pass" | "fail" | "unknown";
+  ocrAvailable: boolean;
+  ocrTextLength: number;
+  documentFaceDetected: boolean;
+  selfieFaceDetected: boolean;
+  liveness: "passed" | "not_checked";
+  comparisonStatus: "pass" | "fail" | "unknown";
+  comparisonSimilarity: number | null;
+  comparisonModel: string;
+};
+
+export async function submitPortableVerification(payload: { documentType: "cni" | "passeport" | "permis" | "carte_scolaire"; documentData: string; selfieData: string; preflight?: PortableKycPreflight }) {
   const client = requireSupabaseClient();
   const { data: { user }, error: authError } = await client.auth.getUser();
   if (authError) throw authError;
@@ -495,13 +595,12 @@ export async function submitPortableVerification(payload: { documentType: "cni" 
     document_type: payload.documentType,
     document_path: documentPath,
     selfie_path: selfiePath,
-  }).select("id, status, admin_note, ai_reviewed_at").single();
+  }).select("id, status, admin_note, ai_review, ai_reviewed_at").single();
   if (error) throw error;
   const verification = normalizeVerification(data as Record<string, unknown>);
-  const { data: result, error: invokeError } = await client.functions.invoke("verify-identity", { body: { verificationId: verification.id } });
-  if (invokeError) return { verification, analysisError: "Votre dossier est enregistré et reste en attente d’examen sécurisé." };
-  const status = result?.status as PortableVerification["status"] | undefined;
-  return { verification: { ...verification, status: status ?? verification.status, aiReviewedAt: new Date().toISOString() }, analysisError: null };
+  const analysis = await client.functions.invoke("verify-identity", { body: { verificationId: verification.id, preflight: payload.preflight ?? null } });
+  const analysisResult = await confirmPortableVerificationAnalysis(client, verification, analysis.error);
+  return analysisResult;
 }
 
 export async function listPortableConversations() {

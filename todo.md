@@ -225,3 +225,80 @@
 - [ ] Ajouter une régression inter-comptes couvrant création, lecture publique et absence d’isolation accidentelle.
 - [ ] Revalider les annonces réelles des deux téléphones avant de déclarer la marketplace opérationnelle.
 - [x] Corriger le logo cassé visible dans le dernier aperçu et vérifier son affichage web, PWA et Android.
+- [x] Vérifier l’état public de `afrique-afrique.com` et ses enregistrements DNS sans modifier la zone.
+- [x] Préparer le rattachement de `afrique-afrique.com` à l’hébergement Afrique Marketplace choisi.
+- [x] Vérifier le domaine après propagation DNS et conserver les enregistrements e-mail existants.
+
+- [x] Respecter la règle de collaboration : travailler sur une branche dédiée, ne pas pousser ni fusionner vers `main` sans validation explicite de Marc-Arnaud.
+- [ ] Diagnostiquer et corriger la fausse validation de publication : une annonce ne doit réussir que si sa ligne est effectivement créée dans `am_listings` et visible par la requête publique.
+- [x] Proposer séparément toute modification de schéma Supabase, de flow d’authentification ou de logique de publication avant application en production.
+- [ ] Auditer l’erreur `Phone logins are disabled` et proposer une décision explicite entre activation du provider Phone Supabase et maintien de l’authentification interne par alias e-mail.
+- [ ] Auditer l’état de Leaked Password Protection et proposer son activation dans Supabase Auth Settings avant toute modification de production.
+- [x] Corriger les balises canonical et `og:url` pour utiliser `https://afrique-afrique.com/`.
+- [x] Mettre en œuvre un découpage dynamique des routes principales afin de réduire les chunks JavaScript dépassant 500 kB.
+- [ ] Fournir un rapport de branche avec tests, build, preuve de persistance et comparaison de bundle avant toute demande de fusion ou déploiement production.
+- [x] Réaliser un audit de préparation au lancement couvrant persistance des annonces, authentification, visibilité publique, SEO, performance, sécurité et parcours web/Android.
+- [x] Diagnostiquer le dossier d’identité restant en attente après transmission d’un permis et d’un selfie, sans consulter les documents sensibles.
+- [x] Vérifier le statut de traitement et les erreurs de la fonction de vérification, puis proposer une revue humaine ou une résolution explicitement autorisée.
+- [x] Vérifier séparément le dossier du nouveau compte et confirmer qu’aucun échec d’analyse ne reste silencieusement en attente.
+- [x] Concevoir une reprise idempotente des vérifications échouées, sans doublon de dossier ni approbation automatique.
+- [x] Afficher au membre un statut de traitement explicite, la possibilité contrôlée de relancer après incident et l’orientation vers une revue humaine.
+- [x] Couvrir par tests les erreurs de fonction, le repli en revue humaine et l’absence de faux succès avant toute proposition de production.
+- [x] Cartographier les statuts d’identité du frontend, de la fonction Edge et de la base afin d’identifier toute divergence.
+- [x] Déterminer pourquoi une analyse réussie ne fait pas systématiquement passer le profil en `verified`.
+- [x] Préparer localement un correctif de validation automatique strictement fondé sur les contrôles disponibles, sans affaiblir la revue humaine.
+- [x] Tester les cas : validation complète, échec de contrôle, inscription incomplète et selfie appliqué comme photo de profil.
+- [x] Établir la source de vérité unique entre GitHub, Vercel, le frontend et le projet Supabase de production.
+- [x] Auditer les échecs de build Vercel, le package manager, les commandes d’installation/build et les variables de production.
+- [x] Vérifier qu’aucun fichier `.env` ni secret privilégié n’est versionné ou exposé au navigateur.
+- [x] Auditer les politiques RLS, le stockage KYC privé, les annonces publiques, les messages, les favoris, les signalements et les droits d’administration.
+- [ ] Supprimer, après validation, la politique d’upload anonyme sur l’asset de marque public et la remplacer par un chemin d’administration contrôlé.
+- [x] Concevoir une stratégie KYC autonome sans dépendance obligatoire à Gemini, avec contrôles locaux réalistes et repli sécurisé.
+- [x] Préparer un rapport de preuves incluant builds, tests, état Vercel, état Supabase et limites des essais réels avant toute publication.
+
+- [x] Pousser uniquement la branche `fix/publication-auth-seo-bundle` et créer une Pull Request sans fusion, déploiement, migration, changement de secret ni modification de données réelles.
+- [x] Remettre dans la PR le commit, la liste des fichiers, les migrations, Edge Functions, variables, changements KYC/Storage/RLS et la procédure de production soumise à validation ultérieure.
+
+- [x] Vérifier explicitement si la PR dépend encore de `GOOGLE_GENERATIVE_AI_API_KEY` pour une approbation automatique.
+- [x] Préparer une architecture locale/open source KYC avec qualité document, OCR, visage, liveness, comparaison prudente et repli `pending`.
+- [x] Vérifier la prise en charge des quatre types de document et la synchronisation selfie → photo de profil après approbation.
+- [x] Vérifier statiquement les frontières RLS/Storage/messages/annonces entre deux comptes et préparer les tests réels sans toucher aux données existantes.
+
+- [x] Choisir et documenter un modèle open source réellement exécutable pour comparer le visage du document au selfie.
+- [x] Intégrer l’appel réel du modèle de comparaison dans le pipeline local sans faire confiance à un résultat client falsifiable.
+- [x] Implémenter un liveness actif et conserver `PENDING` si le liveness n’est pas suffisamment fiable.
+- [x] Tester le modèle et le liveness sur des images de test non réelles, sans approuver d’identité réelle.
+- [x] Revalider les quatre documents, le selfie caméra, la photo de profil, RLS, Storage, bundle, TypeScript et l’absence de Gemini.
+
+- [ ] Identifier un projet Supabase de test distinct et confirmer qu’il ne s’agit pas de la production.
+- [ ] Exécuter les migrations uniquement dans le projet Supabase de test et y déployer `verify-identity`.
+- [ ] Créer deux comptes de test dédiés et exécuter les parcours KYC, publication et messagerie.
+- [ ] Vérifier les refus croisés RLS/Storage et la visibilité publiée/non publiée sans modifier de données réelles.
+- [ ] Vérifier les scénarios KYC valide, incomplet, liveness absent, comparaison non concluante et blocage de `VERIFIED` forcé côté navigateur.
+- [ ] Vérifier la caméra Android réelle si un appareil de test autorisé est disponible.
+- [ ] Rédiger le rapport contrôlé A–J sans fusion, migration ou déploiement de production.
+
+- [ ] Créer le projet Supabase `Afrimaket Staging` sans utiliser la production, Afrique-business ou apprend-moi.
+- [ ] Vérifier l’identifiant, l’URL, la région et l’état du nouveau staging avant toute opération.
+- [ ] Préparer les variables staging sans afficher ni modifier les secrets de production.
+- [ ] Appliquer uniquement au staging les migrations et la fonction prévues après vérification d’isolation.
+
+- [ ] Diagnostiquer en lecture seule le projet Supabase `apprend-moi` (`vaekzzbalkdtittvhtmt`) : état, tables, données, Auth, Storage et Edge Functions.
+- [ ] Évaluer si `apprend-moi` peut être réactivé et servir de staging sans risque de perte de données.
+
+- [ ] Contrôler la PR et vérifier que les migrations de production sont non destructives avant fusion.
+- [ ] Appliquer les migrations autorisées uniquement au projet Supabase de production Afrimaket, sans supprimer de données.
+- [ ] Déployer `verify-identity` en production et vérifier son état actif.
+- [ ] Fusionner la PR validée dans `main` sans toucher aux autres projets.
+- [ ] Vérifier le déploiement Vercel et les endpoints publics.
+- [ ] Exécuter les tests réels inscription, KYC, publication, visibilité publique, messagerie, RLS et Storage sans contourner la sécurité.
+- [ ] Corriger uniquement les erreurs non destructives puis rédiger le rapport final unique.
+
+- [ ] Corriger le blocage découvert avant déploiement : `verify-identity` ne doit pas forcer `pending` pour tous les dossiers et doit appliquer une décision serveur sûre fondée sur des résultats vérifiables.
+
+- [ ] Finaliser `verify-identity` en statut `pending` avec pré-contrôles enregistrés et revue humaine obligatoire.
+- [ ] Finaliser l’interface admin Vérifications KYC avec aperçu privé et indicateurs non décisionnels.
+- [ ] Vérifier que seuls les administrateurs autorisés peuvent approuver ou refuser, et que le navigateur ne peut jamais définir `verified`.
+- [ ] Vérifier la synchronisation approbation → profil vérifié → selfie comme photo de profil, et le rejet sans photo KYC publique.
+- [ ] Vérifier RLS, Storage, annonces et conversations sans réexécuter les migrations déjà appliquées.
+- [ ] Lancer tous les tests et le build final sans supprimer ni modifier de données réelles.
