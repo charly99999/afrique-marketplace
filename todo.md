@@ -310,3 +310,7 @@
 - [ ] Appliquer intégralement les instructions du fichier utilisateur `pasted_content.txt` et valider les changements associés.
 - [x] Corriger les cartes Accueil/Explorer pour résoudre les médias via Supabase en mode portable et conserver le résolveur legacy.
 - [ ] Mettre en place une validation KYC automatique uniquement après installation et validation d’un modèle serveur indépendant ; en l’état, les pré-contrôles navigateur restent des indicateurs non fiables et le dossier reste `pending`/revue humaine.
+- [x] Configurer les variables publiques `VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY` dans l’aperçu afin d’éviter l’écran d’erreur de montage sans exposer de clé privilégiée.
+- [x] Récupérer depuis la configuration connectée les valeurs publiques Supabase et les renseigner dans l’aperçu sans exposer de clé privée.
+- [ ] Vérifier C300 en production sur Explorer, détail, actualisation et mobile responsive, puis comparer avec l’APK et reconstruire celle-ci si une divergence est confirmée.
+- [ ] Corriger le 404 de production sur `/explorer` et les routes dynamiques en garantissant la réécriture SPA vers `index.html` sur le domaine officiel.
