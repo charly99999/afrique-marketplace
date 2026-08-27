@@ -2,6 +2,7 @@ import { ArrowRight, Building2, CarFront, ChevronRight, CircleCheckBig, MapPin, 
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { MarketplaceShell } from "@/components/MarketplaceShell";
+import PostsFeed from "@/components/PostsFeed";
 import { QueryErrorState } from "@/components/QueryErrorState";
 import { trpc } from "@/lib/trpc";
 import { listingsHref } from "@/lib/listingFilters";
@@ -65,6 +66,7 @@ export default function Home() {
         {listings.error ? <QueryErrorState message="Les annonces n’ont pas pu être chargées pour le moment." onRetry={() => listings.refetch()} /> : listings.isLoading ? <div className="empty-state">Chargement des opportunités disponibles…</div> : listings.data?.length ? <div className="listing-grid">{listings.data.map(listing => <Link href={`/annonce/${listing.id}`} className="listing-card" key={listing.id}><div className="listing-card__media">{listing.media?.[0]?.kind === "video" ? <video src={mediaUrl(listing.media[0].key)} muted /> : listing.media?.[0]?.key ? <img src={mediaUrl(listing.media[0].key)} alt="" /> : <div className="media-placeholder"><Sparkles /></div>}</div><div className="listing-card__body"><span>{listing.category}</span><h3>{listing.title}</h3><p><MapPin size={14} /> {listing.city}</p><strong>{price(listing.price, listing.currency)}</strong></div></Link>)}</div> : <div className="empty-state empty-state--bordered"><Sparkles size={25} /><h3>La marketplace prend vie.</h3><p>Aucune annonce ne correspond encore à cette recherche. Ajustez vos critères ou revenez prochainement.</p></div>}
       </section>
 
+      <PostsFeed />
       <section className="trust-banner"><div className="page-wrap trust-banner__inner"><ShieldCheck size={38} /><div><p className="eyebrow">Votre sécurité, sans compromis</p><h2>Un profil vérifié avant de publier.</h2><p>La vérification par pièce d’identité et selfie en direct crée un environnement plus fiable pour chaque échange.</p></div><Link href="/profil" className="button button--light">Créer mon profil <ArrowRight size={17} /></Link></div></section>
     </MarketplaceShell>
   );

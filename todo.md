@@ -315,3 +315,5 @@
 - [x] Vérifier C300 en production sur Explorer, détail, actualisation et mobile responsive, puis comparer avec l’APK et reconstruire celle-ci si une divergence est confirmée. Résultat : C300 et toute annonce publiée sont absents de la base ; Explorer fonctionne après déploiement, le détail/média C300 ne peut donc pas être testé sans créer ou restaurer une annonce réelle.
 - [x] Corriger le 404 de production sur `/explorer` et les routes dynamiques en garantissant la réécriture SPA vers `index.html` sur le domaine officiel.
 - [x] Synchroniser le correctif routage/C300 vers le dépôt GitHub réellement connecté à Vercel, puis vérifier le déploiement du domaine officiel.
+- [ ] Exécuter la mission complète jointe : feed global, publication, RLS/Storage, tests multi-comptes, C300, production, mobile, KYC et APK, sans supprimer ni fabriquer de données réelles.
+- [x] Brancher le frontend sur la table Supabase `posts` : feed global, badge vérifié, publication texte/photo/vidéo, tests et déploiement, sans modifier C300. Vue `posts_feed` appliquée côté Supabase ; tests frontend et build validés.
