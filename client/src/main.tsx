@@ -8,10 +8,16 @@ import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
 
+// Le shell doit toujours être servi par Vercel directement. Une ancienne version
+// du service worker pouvait conserver un index HTML obsolète et laisser #root vide
+// après une publication. On désactive donc le cache applicatif et on nettoie les
+// enregistrements hérités au démarrage, sans bloquer le montage React.
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-  });
+  void navigator.serviceWorker
+    .getRegistrations()
+    .then(registrations => Promise.all(registrations.map(registration => registration.unregister())))
+    .then(() => caches?.keys?.().then(keys => Promise.all(keys.map(key => caches.delete(key)))))
+    .catch(() => undefined);
 }
 
 const queryClient = new QueryClient();
