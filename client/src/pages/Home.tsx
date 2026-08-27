@@ -6,6 +6,9 @@ import { QueryErrorState } from "@/components/QueryErrorState";
 import { trpc } from "@/lib/trpc";
 import { listingsHref } from "@/lib/listingFilters";
 import { usePublicListings } from "@/lib/usePublicListings";
+import { isSupabaseMode } from "@/lib/backendMode";
+import { portableMediaUrl } from "@/lib/marketplaceSupabase";
+import { storageUrl } from "@/lib/media";
 
 const categories = [
   { id: "immobilier", label: "Immobilier", copy: "Habiter, louer, investir", icon: Building2 },
@@ -24,6 +27,7 @@ export default function Home() {
   const filters = useMemo(() => ({ query: query || undefined, city: city || undefined, category: category || undefined }), [query, city, category]);
   const explorerHref = listingsHref({ query, city, category });
   const listings = usePublicListings(filters);
+  const mediaUrl = isSupabaseMode ? portableMediaUrl : storageUrl;
 
   return (
     <MarketplaceShell>
@@ -58,7 +62,7 @@ export default function Home() {
 
       <section className="page-wrap section-space section-space--compact">
         <div className="section-heading"><div><p className="eyebrow eyebrow--dark">Au plus près de vos besoins</p><h2>Les annonces disponibles.</h2></div><span className="results-count">{listings.data?.length ?? 0} résultat{(listings.data?.length ?? 0) > 1 ? "s" : ""}</span></div>
-        {listings.error ? <QueryErrorState message="Les annonces n’ont pas pu être chargées pour le moment." onRetry={() => listings.refetch()} /> : listings.isLoading ? <div className="empty-state">Chargement des opportunités disponibles…</div> : listings.data?.length ? <div className="listing-grid">{listings.data.map(listing => <Link href={`/annonce/${listing.id}`} className="listing-card" key={listing.id}><div className="listing-card__media">{listing.media?.[0]?.kind === "video" ? <video src={`/manus-storage/${listing.media[0].key}`} muted /> : listing.media?.[0]?.key ? <img src={`/manus-storage/${listing.media[0].key}`} alt="" /> : <div className="media-placeholder"><Sparkles /></div>}</div><div className="listing-card__body"><span>{listing.category}</span><h3>{listing.title}</h3><p><MapPin size={14} /> {listing.city}</p><strong>{price(listing.price, listing.currency)}</strong></div></Link>)}</div> : <div className="empty-state empty-state--bordered"><Sparkles size={25} /><h3>La marketplace prend vie.</h3><p>Aucune annonce ne correspond encore à cette recherche. Ajustez vos critères ou revenez prochainement.</p></div>}
+        {listings.error ? <QueryErrorState message="Les annonces n’ont pas pu être chargées pour le moment." onRetry={() => listings.refetch()} /> : listings.isLoading ? <div className="empty-state">Chargement des opportunités disponibles…</div> : listings.data?.length ? <div className="listing-grid">{listings.data.map(listing => <Link href={`/annonce/${listing.id}`} className="listing-card" key={listing.id}><div className="listing-card__media">{listing.media?.[0]?.kind === "video" ? <video src={mediaUrl(listing.media[0].key)} muted /> : listing.media?.[0]?.key ? <img src={mediaUrl(listing.media[0].key)} alt="" /> : <div className="media-placeholder"><Sparkles /></div>}</div><div className="listing-card__body"><span>{listing.category}</span><h3>{listing.title}</h3><p><MapPin size={14} /> {listing.city}</p><strong>{price(listing.price, listing.currency)}</strong></div></Link>)}</div> : <div className="empty-state empty-state--bordered"><Sparkles size={25} /><h3>La marketplace prend vie.</h3><p>Aucune annonce ne correspond encore à cette recherche. Ajustez vos critères ou revenez prochainement.</p></div>}
       </section>
 
       <section className="trust-banner"><div className="page-wrap trust-banner__inner"><ShieldCheck size={38} /><div><p className="eyebrow">Votre sécurité, sans compromis</p><h2>Un profil vérifié avant de publier.</h2><p>La vérification par pièce d’identité et selfie en direct crée un environnement plus fiable pour chaque échange.</p></div><Link href="/profil" className="button button--light">Créer mon profil <ArrowRight size={17} /></Link></div></section>

@@ -4,6 +4,26 @@
   "outputDirectory": "dist/cloudflare",
   "routes": [
     {
+      "src": "/explorer",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/annonces",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/annonces/(.*)",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/annonce/(.*)",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/abonnements",
+      "dest": "/index.html"
+    },
+    {
       "src": "/compte",
       "headers": { "X-Robots-Tag": "noindex, nofollow, noarchive" },
       "dest": "/index.html"

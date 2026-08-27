@@ -3,10 +3,7 @@ import { randomBytes, randomUUID, scryptSync } from "crypto";
 import { z } from "zod";
 import { canPublishWithVerification, MARKETPLACE_CATEGORIES, listingCreateSchema, moderationStatuses, profileDetailsSchema, registrationSchema, resolveVerificationDecision, visibleSellerPhone } from "../../shared/marketplace";
 import * as db from "../db";
-import { notifyOwner } from "../_core/notification";
 import { storagePut } from "../storage";
-import { analyzeVerificationWithAi } from "../verificationAi";
-import { decideFromAiReview } from "../../shared/verificationAi";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 
 const dataUrlSchema = z.string().regex(/^data:(image\/(jpeg|jpg|png|webp)|video\/(mp4|webm));base64,/, "Format de média non pris en charge").max(3_000_000);
@@ -51,20 +48,19 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next();
 });
 
-async function runAiVerification(verificationId: number) {
+async function runLocalVerification(verificationId: number) {
   const dossier = await db.getVerificationDossier(verificationId);
   if (!dossier) throw new TRPCError({ code: "NOT_FOUND", message: "Dossier de vérification introuvable." });
-  const review = await analyzeVerificationWithAi(dossier);
+  const review = {
+    recommendation: "manual_review" as const,
+    confidence: 0,
+    documentReadable: false,
+    selfieFaceVisible: false,
+    profileInformationConsistent: false,
+    reasons: ["Les contrôles locaux du navigateur ne constituent pas une preuve serveur suffisante ; une revue sécurisée est requise."],
+  };
   await db.saveAiVerificationReview(verificationId, review);
-  const outcome = decideFromAiReview(review);
-  if (outcome.decision === "pending") {
-    await notifyOwner({ title: "Dossier IA à examiner", content: `Le profil ${dossier.userId} nécessite une revue complémentaire : ${outcome.note}` });
-    return { id: dossier.id, status: "pending" as const, aiStatus: "manual_review" as const };
-  }
-  const decided = await db.applyAutomatedVerificationDecision(verificationId, outcome.decision, outcome.note);
-  const notification = resolveVerificationDecision(outcome.decision, decided.selfieKey, outcome.note).notification;
-  await db.createNotification({ userId: decided.userId, type: "verification", ...notification });
-  return { id: dossier.id, status: outcome.decision, aiStatus: "decided" as const };
+  return { id: dossier.id, status: "pending" as const, aiStatus: "manual_review" as const };
 }
 
 export const marketplaceRouter = router({
@@ -135,10 +131,9 @@ export const marketplaceRouter = router({
       const verification = await db.createVerification({ userId: ctx.user.id, documentType: input.documentType, documentKey: documentFile.key, selfieKey: selfieFile.key });
       if (!verification) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Le dossier de vérification n’a pas pu être créé." });
       try {
-        return await runAiVerification(verification.id);
+        return await runLocalVerification(verification.id);
       } catch (error) {
-        console.error("[Verification AI] Analysis unavailable:", error);
-        await notifyOwner({ title: "Dossier à examiner", content: `Le profil ${ctx.user.id} a soumis une vérification qui nécessite une revue.` });
+        console.error("[Vérification locale] Analyse non concluante:", error);
         return { id: verification.id, status: "pending" as const, aiStatus: "unavailable" as const };
       }
     }),
@@ -146,9 +141,9 @@ export const marketplaceRouter = router({
       const verification = await db.getLatestVerification(ctx.user.id);
       if (!verification || verification.status !== "pending") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Aucun dossier en attente à analyser." });
       try {
-        return await runAiVerification(verification.id);
+        return await runLocalVerification(verification.id);
       } catch (error) {
-        console.error("[Verification AI] Analysis unavailable:", error);
+        console.error("[Vérification locale] Analyse non concluante:", error);
         return { id: verification.id, status: "pending" as const, aiStatus: "unavailable" as const };
       }
     }),
